@@ -1,8 +1,8 @@
 # yOCA Engine
 
-Carousel render engine used by the yOCA+ skill (OPENIDEA.biz). Canvas 2D, 1080×1350 PNG, brand-driven.
+Visual render engine used by the yOCA+ skill (OPENIDEA.biz). Canvas 2D, brand-driven. Formats: carousel, post (4:5), post_square (1:1), story (9:16).
 
-Usage: load `yoca-engine.min.js` and call `YOCA.render({ brand, slides, options })`.
+Usage: load `yoca-engine.min.js` and call `YOCA.render({ brand, slides, options: { format, lang, file } })`.
 The brand tokens and slide schema are documented in the yOCA+ skill file `kb-d02-carousel-engine.md`.
 
 Each version is pinned to its commit and served by jsDelivr. v1.0:

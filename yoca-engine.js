@@ -1,5 +1,5 @@
-/*! yOCA+ Carousel Engine v1.1 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native.
- * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { lang, file, mount } })
+/*! yOCA+ Visual Engine v2.0 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story.
+ * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { format, lang, file, mount } })
  * The engine is identical for every client. Every visual decision comes from BRAND_TOKENS.
  * Never edit this code inside a chat. Fill BRAND_TOKENS and SLIDES only.
  */
@@ -38,6 +38,7 @@
     glow: false,
     cover: { title_style: 'plain', align: 'top', logo: 'bottom', image_opacity: 0.18, anchor: '' },
     logo: { url_light: '', url_dark: '', wordmark: null, tagline: '', internal: 'none' },
+    motion: { reveal: 450, stagger: 140, rise: 28, delay: 150, fade: 250 },
     swipe_text: 'SWIPE →',
     cta_url: ''
   };
@@ -68,9 +69,9 @@
   };
 
   var UI = {
-    it: { all: 'Scarica tutte (PNG)', one: 'Scarica PNG', ok: 'QA superato', fonts: 'Font non caricati: uso fallback', loading: 'Caricamento font…' },
-    en: { all: 'Download all (PNG)', one: 'Download PNG', ok: 'QA passed', fonts: 'Fonts not loaded: using fallback', loading: 'Loading fonts…' },
-    es: { all: 'Descargar todas (PNG)', one: 'Descargar PNG', ok: 'QA superado', fonts: 'Fuentes no cargadas: uso fallback', loading: 'Cargando fuentes…' }
+    it: { all: 'Scarica tutte (PNG)', one: 'Scarica PNG', ok: 'QA superato', fonts: 'Font non caricati: uso fallback', loading: 'Caricamento font…', report: 'Copia report QA', copied: 'Report copiato: incollalo in chat', fix: 'Correggi solo il blocco yOCA DATA (BRAND e SLIDES), poi ricrea il Canvas con la cornice di SKILL.md senza toccare altro codice.' },
+    en: { all: 'Download all (PNG)', one: 'Download PNG', ok: 'QA passed', fonts: 'Fonts not loaded: using fallback', loading: 'Loading fonts…', report: 'Copy QA report', copied: 'Report copied: paste it in the chat', fix: 'Fix only the yOCA DATA block (BRAND and SLIDES), then recreate the Canvas from the SKILL.md shell without touching any other code.' },
+    es: { all: 'Descargar todas (PNG)', one: 'Descargar PNG', ok: 'QA superado', fonts: 'Fuentes no cargadas: uso fallback', loading: 'Cargando fuentes…', report: 'Copiar informe QA', copied: 'Informe copiado: pégalo en el chat', fix: 'Corrige solo el bloque yOCA DATA (BRAND y SLIDES) y vuelve a crear el Canvas con el marco de SKILL.md sin tocar otro código.' }
   };
 
   /* ---------- utils ---------- */
@@ -131,7 +132,8 @@
     if (over) R = merge(R, over);
     var F = env.brand.fonts[R.f] || env.brand.fonts.body;
     if (R.f === 'mono' && !F.family) F = env.brand.fonts.body;
-    var size = R.fixed ? R.size : R.size * env.s;
+    var boost = (role === 'meta' || role === 'tagline' || role === 'wordmark') ? 1 : (FMT.boost || 1);
+    var size = (R.fixed ? R.size : R.size * env.s) * boost;
     if (R.min) {
       var m = env.brand.min_size[R.min] || 0;
       if (size < m) size = m;
@@ -339,7 +341,7 @@
     return {
       h: h, kind: 'compare', draw: function (y) {
         var ctx = env.ctx;
-        ctx.save(); ctx.globalAlpha = 0.62; ctx.setLineDash([10, 8]); ctx.strokeStyle = env.ink; ctx.lineWidth = 2;
+        ctx.save(); ctx.globalAlpha *= 0.62; ctx.setLineDash([10, 8]); ctx.strokeStyle = env.ink; ctx.lineWidth = 2;
         rr(ctx, env.x + 1, y + 1, cw - 2, h - 2, env.r); ctx.stroke(); ctx.setLineDash([]);
         drawText(env, A.lab, env.x + pad, y + pad, { color: env.muted });
         drawText(env, A.txt, env.x + pad, y + pad + A.lab.h + 18, { color: env.muted, em: 'underline' });
@@ -536,19 +538,19 @@
   }
 
   /* ---------- logo ---------- */
-  function logoBlock(env, images, withTagline) {
+  function logoBlock(env, images, withTagline, sizeOver) {
     var ctx = env.ctx, L = env.brand.logo, img = env.dark ? images.dark : images.light;
     var tf = fontOf(env, 'tagline'), tag = withTagline && L.tagline ? layoutText(env, L.tagline, 'tagline', env.w) : null;
     if (img) {
-      var lh = 64, lw = img.width * lh / img.height;
+      var lh = sizeOver ? sizeOver * 1.4 : 64, lw = img.width * lh / img.height;
       return { h: lh + (tag ? 14 + tag.h : 0), kind: 'logo', draw: function (y) { ctx.drawImage(img, env.x, y, lw, lh); if (tag) drawText(env, tag, env.x, y + lh + 14, { color: env.muted }); } };
     }
     var wm = L.wordmark;
     if (!wm || !wm.parts) {
-      var T = layoutText(env, env.brand.name, 'wordmark', env.w);
+      var T = layoutText(env, env.brand.name, 'wordmark', env.w, sizeOver ? { size: sizeOver } : null);
       return { h: T.h + (tag ? 14 + tag.h : 0), kind: 'logo', draw: function (y) { drawText(env, T, env.x, y, { bold: true }); if (tag) drawText(env, tag, env.x, y + T.h + 14, { color: env.muted }); } };
     }
-    var f = fontOf(env, 'wordmark', wm.size ? { size: wm.size } : null);
+    var f = fontOf(env, 'wordmark', sizeOver ? { size: sizeOver } : (wm.size ? { size: wm.size } : null));
     return {
       h: f.size + (tag ? 16 + tag.h : 0), kind: 'logo', draw: function (y) {
         var x = env.x;
@@ -564,6 +566,31 @@
         if (tag) drawText(env, tag, env.x, y + f.size + 16, { color: env.muted });
       }
     };
+  }
+
+  /* ---------- formats ---------- */
+  var FORMATS = {
+    carousel:    { W: 1080, H: 1350, progress: true,  swipe: true,  mark: false, label: 'carousel' },
+    post:        { W: 1080, H: 1350, progress: false, swipe: false, mark: true,  label: 'post 4:5' },
+    post_square: { W: 1080, H: 1080, progress: false, swipe: false, mark: true,  label: 'post 1:1' },
+    story:       { W: 1080, H: 1920, progress: false, swipe: false, mark: true,  safe_top: 220, safe_bottom: 250, boost: 1.22, label: 'story 9:16' }
+  };
+  var FMT = FORMATS.carousel, FMT_NAME = 'carousel';
+  function setFormat(name) { FMT_NAME = FORMATS[name] ? name : 'carousel'; FMT = FORMATS[FMT_NAME]; W = FMT.W; H = FMT.H; }
+  function geom(brand) {
+    var L = brand.layout, top = L.content_top + (FMT.safe_top || 0), sb = FMT.safe_bottom || 0, bottom, py, my = null;
+    if (FMT.progress) { bottom = L.content_bottom + (H - 1350); py = L.progress_y + (H - 1350); }
+    else { my = H - sb - (FMT.mark_offset || 110); bottom = my - 60; py = my; }
+    return { top: top, bottom: bottom, py: py, my: my, min_gap: L.min_gap };
+  }
+
+  /* ---------- motion: progressive reveal (static when env.t is null) ---------- */
+  function reveal(env, k, fn) {
+    if (env.t == null) return fn();
+    var M = env.brand.motion, p = Math.max(0, Math.min(1, (env.t - (M.delay + k * M.stagger)) / M.reveal));
+    if (p <= 0) return;
+    var e = 1 - Math.pow(1 - p, 4), ctx = env.ctx;
+    ctx.save(); ctx.globalAlpha *= e; ctx.translate(0, (1 - e) * M.rise); fn(); ctx.restore();
   }
 
   /* ---------- backgrounds & furniture ---------- */
@@ -589,9 +616,10 @@
     ctx.restore();
   }
 
-  function paintImage(env, img) {
-    if (!img) return;
-    var ctx = env.ctx, op = env.brand.cover.image_opacity;
+  function duotone(env, img) {
+    var key = [env.bg, env.accent, W, H].join('|');
+    img._duo = img._duo || {};
+    if (img._duo[key]) return img._duo[key];
     var off = document.createElement('canvas'); off.width = W; off.height = H;
     var o = off.getContext('2d'), sc = Math.max(W / img.width, H / img.height);
     o.drawImage(img, (W - img.width * sc) / 2, (H - img.height * sc) / 2, img.width * sc, img.height * sc);
@@ -603,7 +631,12 @@
       }
       o.putImageData(d, 0, 0);
     } catch (e) { env.qa.push({ level: 'warn', msg: 'Image duotone skipped (CORS)' }); }
-    ctx.save(); ctx.globalAlpha = op; ctx.drawImage(off, 0, 0); ctx.restore();
+    img._duo[key] = off; return off;
+  }
+  function paintImage(env, img) {
+    if (!img) return;
+    var ctx = env.ctx, off = duotone(env, img);
+    ctx.save(); ctx.globalAlpha = env.brand.cover.image_opacity; ctx.drawImage(off, 0, 0, W, H); ctx.restore();
     var gr = ctx.createLinearGradient(0, H * 0.45, 0, H); gr.addColorStop(0, rgba(env.bg, 0)); gr.addColorStop(1, rgba(env.bg, 0.85));
     ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
   }
@@ -619,33 +652,46 @@
     }
   }
 
-  function paintFurniture(env, i, n, slideType, images) {
-    var ctx = env.ctx, b = env.brand, P = b.progress, py = b.layout.progress_y;
-    if (P.style === 'dots') {
-      var gap = 30, total = (n - 1) * gap, sx = P.align === 'center' ? (W - total) / 2 : env.x + 8;
-      for (var k = 0; k < n; k++) {
-        ctx.fillStyle = k === i ? env.accent : env.neutral; ctx.beginPath();
-        ctx.arc(sx + k * gap, py, k === i ? 9 : 6, 0, 7); ctx.fill();
+  // brand mark for single formats (post, story, print): small wordmark left, URL right
+  function paintMark(env, g, images) {
+    var ctx = env.ctx, b = env.brand, lg = logoBlock(env, images, false, 32);
+    lg.draw(g.my - lg.h / 2);
+    if (b.cta_url) {
+      var f = fontOf(env, 'url'); setFont(ctx, f, false); ctx.fillStyle = env.muted; ctx.textAlign = 'right';
+      ctx.fillText(String(b.cta_url).replace(/^https?:\/\//, '').replace(/\/$/, ''), W - env.x, g.my + f.size * 0.35); ctx.textAlign = 'left';
+    }
+  }
+
+  function paintFurniture(env, g, i, n, slideType, images) {
+    var ctx = env.ctx, b = env.brand, P = b.progress, py = g.py;
+    if (FMT.progress && n > 1) {
+      if (P.style === 'dots') {
+        var gap = 30, total = (n - 1) * gap, sx = P.align === 'center' ? (W - total) / 2 : env.x + 8;
+        for (var k = 0; k < n; k++) {
+          ctx.fillStyle = k === i ? env.accent : env.neutral; ctx.beginPath();
+          ctx.arc(sx + k * gap, py, k === i ? 9 : 6, 0, 7); ctx.fill();
+        }
+      } else if (P.style === 'bar') {
+        ctx.fillStyle = env.neutral; rr(ctx, env.x, py - 3, env.w, 6, 3); ctx.fill();
+        ctx.fillStyle = env.accent; rr(ctx, env.x, py - 3, env.w * (i + 1) / n, 6, 3); ctx.fill();
+      } else if (P.style === 'fraction') {
+        var f = fontOf(env, 'meta'); setFont(ctx, f, true); ctx.fillStyle = env.muted;
+        ctx.fillText(String(i + 1).padStart(2, '0') + ' / ' + String(n).padStart(2, '0'), env.x, py + 8);
       }
-    } else if (P.style === 'bar') {
-      ctx.fillStyle = env.neutral; rr(ctx, env.x, py - 3, env.w, 6, 3); ctx.fill();
-      ctx.fillStyle = env.accent; rr(ctx, env.x, py - 3, env.w * (i + 1) / n, 6, 3); ctx.fill();
-    } else if (P.style === 'fraction') {
-      var f = fontOf(env, 'meta'); setFont(ctx, f, true); ctx.fillStyle = env.muted;
-      ctx.fillText(String(i + 1).padStart(2, '0') + ' / ' + String(n).padStart(2, '0'), env.x, py + 8);
+      if (slideType === 'cover' && b.swipe_text && FMT.swipe) {
+        var mf = fontOf(env, 'meta'); setFont(ctx, mf, true); ctx.fillStyle = env.accentText(22) || env.ink;
+        ctx.textAlign = 'right'; ctx.fillText(b.swipe_text, W - env.x, py + 8); ctx.textAlign = 'left';
+      }
+      if (slideType !== 'cover' && slideType !== 'cta' && b.logo.internal === 'wordmark') {
+        var mf2 = fontOf(env, 'meta'); setFont(ctx, mf2, true); ctx.fillStyle = env.muted; ctx.textAlign = 'right';
+        ctx.fillText(b.name, W - env.x, py + 8); ctx.textAlign = 'left';
+      }
+      if (slideType !== 'cover' && slideType !== 'cta' && b.logo.internal === 'icon') {
+        var ic = env.dark ? images.icon_dark : images.icon_light;
+        if (ic) { ctx.save(); ctx.globalAlpha = 0.75; var s = 64; ctx.drawImage(ic, W - env.x - s, py - s / 2, s, s * ic.height / ic.width); ctx.restore(); }
+      }
     }
-    if (slideType === 'cover' && b.swipe_text) {
-      var mf = fontOf(env, 'meta'); setFont(ctx, mf, true); ctx.fillStyle = env.accentText(22) || env.ink;
-      ctx.textAlign = 'right'; ctx.fillText(b.swipe_text, W - env.x, py + 8); ctx.textAlign = 'left';
-    }
-    if (slideType !== 'cover' && slideType !== 'cta' && b.logo.internal === 'wordmark') {
-      var mf2 = fontOf(env, 'meta'); setFont(ctx, mf2, true); ctx.fillStyle = env.muted; ctx.textAlign = 'right';
-      ctx.fillText(b.name, W - env.x, py + 8); ctx.textAlign = 'left';
-    }
-    if (slideType !== 'cover' && slideType !== 'cta' && b.logo.internal === 'icon') {
-      var ic = env.dark ? images.icon_dark : images.icon_light;
-      if (ic) { ctx.save(); ctx.globalAlpha = 0.75; var s = 64; ctx.drawImage(ic, W - env.x - s, py - s / 2, s, s * ic.height / ic.width); ctx.restore(); }
-    }
+    if (FMT.mark && slideType !== 'cover' && slideType !== 'cta') paintMark(env, g, images);
     if (b.strip && b.strip.colors && b.strip.colors.length) {
       var sh = b.strip.height || 16, sw = W / b.strip.colors.length;
       b.strip.colors.forEach(function (c, k) { ctx.fillStyle = c; ctx.fillRect(Math.floor(k * sw), H - sh, Math.ceil(sw), sh); });
@@ -695,15 +741,16 @@
     return { head: head, body: body, sum: body.reduce(function (a, b) { return a + b.h; }, 0) };
   }
 
-  function renderStandard(ctx, brand, sp, i, n, surface, images) {
-    var lay = brand.layout, top = lay.content_top, bottom = lay.content_bottom, avail = bottom - top;
+  // plan once, paint many times (static: t = null; video: t = ms since scene start)
+  function planStandard(ctx, brand, sp, i, n, surface, images) {
+    var g = geom(brand), top = g.top, bottom = g.bottom, avail = bottom - top;
     var chosen = null, s, qaTmp;
     var maxS = { quote: 1.5, statement: 1.4, numeral: 1.3, stat: 1.3, cta: 1.3 }[sp.layout] || 1.25;
     for (s = maxS; s >= 0.6; s -= 0.025) {
       qaTmp = [];
       var env = makeEnv(ctx, brand, surface, s, qaTmp);
       var L = (LAYOUTS[sp.layout] || LAYOUTS.statement)(env, sp, images), m = measure(L);
-      var need = m.head + m.sum + lay.min_gap * (m.body.length + (m.head ? 1 : 0));
+      var need = m.head + m.sum + g.min_gap * (m.body.length + (m.head ? 1 : 0));
       var widthErr = qaTmp.some(function (q) { return q.level === 'error'; });
       if (need <= avail && !widthErr) { chosen = { env: env, L: L, m: m }; break; }
     }
@@ -714,40 +761,26 @@
       chosen = { env: envMin, L: Lm, m: measure(Lm) };
       qa.push({ level: 'error', msg: 'Content does not fit even at minimum size: cut copy' });
     }
-    var env2 = chosen.env, L2 = chosen.L, m2 = chosen.m;
-    paintBackground(env2, sp.layout === 'cta' ? 'cta' : 'internal');
-    paintFrame(env2);
-    var y = top;
-    if (L2.head) { L2.head.draw(y); y += L2.head.h; }
-    var free = bottom - y - m2.sum, gaps = m2.body.length + 1;
-    if (!L2.head) gaps = m2.body.length + 1;
-    var gap = Math.max(lay.min_gap, free / gaps);
-    if (sp.layout === 'cta') gap = Math.max(lay.min_gap, free / (m2.body.length + 1));
-    y += L2.head ? Math.min(gap, Math.max(lay.min_gap, gap)) : gap;
-    var placed = [];
-    m2.body.forEach(function (b) { b.draw(y); placed.push([y, y + b.h, b.kind]); y += b.h + gap; });
-    if (gap > 150) qa.push({ level: 'warn', msg: 'Sparse slide: gaps ' + Math.round(gap) + 'px. Add a visual block or more copy.' });
-    placed.forEach(function (p) { if (p[1] > bottom + 1) qa.push({ level: 'error', msg: 'Block "' + p[2] + '" crosses the bottom safe line' }); });
-    if (chosen.env.s < 0.8) qa.push({ level: 'warn', msg: 'Copy shrunk to ' + Math.round(chosen.env.s * 100) + '%: consider cutting text' });
-    paintFurniture(env2, i, n, sp.layout, images);
-    return { qa: qa, scale: env2.s };
+    var env2 = chosen.env, L2 = chosen.L, m2 = chosen.m, headY = top, y = top + (L2.head ? L2.head.h : 0);
+    var gap = Math.max(g.min_gap, (bottom - y - m2.sum) / (m2.body.length + 1)), pos = [];
+    y += gap;
+    m2.body.forEach(function (b) { pos.push(y); if (y + b.h > bottom + 1) qa.push({ level: 'error', msg: 'Block "' + b.kind + '" crosses the bottom safe line' }); y += b.h + gap; });
+    if (gap > 150 * H / 1350) qa.push({ level: 'warn', msg: 'Sparse card: gaps ' + Math.round(gap) + 'px. Add a visual block or more copy.' });
+    if (env2.s < 0.8) qa.push({ level: 'warn', msg: 'Copy shrunk to ' + Math.round(env2.s * 100) + '%: cut text' });
+    return {
+      qa: qa, scale: env2.s, blocks: (L2.head ? 1 : 0) + m2.body.length,
+      paint: function (t) {
+        env2.t = t == null ? null : t;
+        paintBackground(env2, sp.layout === 'cta' ? 'cta' : 'internal'); paintFrame(env2);
+        if (L2.head) reveal(env2, 0, function () { L2.head.draw(headY); });
+        m2.body.forEach(function (b, k) { reveal(env2, k + 1, function () { b.draw(pos[k]); }); });
+        paintFurniture(env2, g, i, n, sp.layout, images);
+      }
+    };
   }
 
-  function renderCover(ctx, brand, sp, i, n, surface, images) {
-    var qa = [], env = makeEnv(ctx, brand, surface, 1, qa), C = brand.cover, lay = brand.layout;
-    paintBackground(env, 'cover');
-    if (images.cover) paintImage(env, images.cover);
-    if (env.dark && brand.glow) {
-      var gr = ctx.createRadialGradient(W * 0.82, H * 0.62, 10, W * 0.82, H * 0.62, 520);
-      gr.addColorStop(0, rgba(env.accent, 0.30)); gr.addColorStop(1, rgba(env.accent, 0));
-      ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
-    }
-    if (C.anchor || sp.anchor) {
-      var af = fontOf(env, 'numeral', { size: 560 }); setFont(ctx, af, true);
-      ctx.fillStyle = rgba(env.accent, env.dark ? 0.16 : 0.12); ctx.textAlign = 'right';
-      ctx.fillText(sp.anchor || C.anchor, W - 60, C.align === 'bottom' ? 640 : H - 230); ctx.textAlign = 'left';
-    }
-    paintFrame(env);
+  function planCover(ctx, brand, sp, i, n, surface, images) {
+    var qa = [], env = makeEnv(ctx, brand, surface, 1, qa), C = brand.cover, g = geom(brand);
     var k = kickerBlock(env, sp.kicker);
     var setup = sp.setup ? textBlock(env, sp.setup, 'cover_setup', { color: env.ink }) : null;
     var sub = sp.subtitle ? textBlock(env, sp.subtitle, 'cover_sub', { color: env.muted, width: env.w * 0.82, em: bodyEm(env) }) : null;
@@ -762,29 +795,52 @@
             var yy = y + li * (tl.lineH + 14);
             ctx.save(); if (env.dark && brand.glow) { ctx.shadowColor = rgba(env.accent, 0.55); ctx.shadowBlur = 40; }
             ctx.fillStyle = env.accent; ctx.fillRect(env.x - bandPad, yy, tl.widths[li] + bandPad * 2, tl.lineH); ctx.restore();
-            var e2 = Object.assign({}, env); e2.ctx = ctx; e2.qa = qa; e2.brand = brand; e2.accentText = function () { return env.onAccent; }; e2.bg = env.accent; e2.dark = env.dark;
+            var e2 = Object.assign({}, env); e2.accentText = function () { return env.onAccent; }; e2.bg = env.accent;
             drawText(e2, one, env.x, yy, { color: env.onAccent, em: 'underline', bold: true });
           });
         } else drawText(env, tl, env.x, y, { em: titleEm(env) });
       }
     };
     var logo = C.logo === 'none' ? null : logoBlock(env, images, true);
-    var main = group([setup, titleBlock, sub], 30);
-    var top = lay.content_top, bottom = lay.content_bottom;
-    if (logo && C.logo === 'top') { logo.draw(top); top += logo.h + 40; }
-    var kh = k ? k.h : 0;
-    if (k) k.draw(top);
-    if (main.h > bottom - top - kh - 60 - (logo && C.logo !== 'top' ? logo.h : 0)) qa.push({ level: 'error', msg: 'Cover text too long' });
-    var startY;
+    var parts = [setup, titleBlock, sub].filter(Boolean), mainH = 0;
+    parts.forEach(function (b, j) { mainH += b.h + (j ? 30 : 0); });
+    var top = g.top, bottom = g.bottom, logoY = null;
+    if (logo && C.logo === 'top') { logoY = top; top += logo.h + 40; }
+    var kh = k ? k.h : 0, kY = top;
     var lowLogo = logo && C.logo !== 'top' ? logo.h + 60 : 0;
-    if (C.align === 'bottom') startY = bottom - main.h - lowLogo;
-    else if (C.align === 'center') startY = top + kh + (bottom - top - kh - main.h - lowLogo) / 2;
+    if (mainH > bottom - top - kh - 60 - lowLogo) qa.push({ level: 'error', msg: 'Cover text too long' });
+    var startY;
+    if (C.align === 'bottom') startY = bottom - mainH - lowLogo;
+    else if (C.align === 'center') startY = top + kh + (bottom - top - kh - mainH - lowLogo) / 2;
     else startY = top + kh + 70;
-    main.draw(startY);
-    if (logo && C.logo !== 'top') logo.draw(bottom - logo.h);
-    paintFurniture(env, i, n, 'cover', images);
+    if (logo && C.logo !== 'top') logoY = bottom - logo.h;
+    var partY = [], py = startY;
+    parts.forEach(function (b) { partY.push(py); py += b.h + 30; });
     if (wordCount(sp.title) > 12) qa.push({ level: 'warn', msg: 'Cover hook over 12 words' });
-    return { qa: qa, scale: 1 };
+    return {
+      qa: qa, scale: 1, blocks: parts.length + 2,
+      paint: function (t) {
+        env.t = t == null ? null : t;
+        paintBackground(env, 'cover');
+        if (images.cover) paintImage(env, images.cover);
+        if (env.dark && brand.glow) {
+          var gr = ctx.createRadialGradient(W * 0.82, H * 0.62, 10, W * 0.82, H * 0.62, 520);
+          gr.addColorStop(0, rgba(env.accent, 0.30)); gr.addColorStop(1, rgba(env.accent, 0));
+          ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+        }
+        if (C.anchor || sp.anchor) {
+          var af = fontOf(env, 'numeral', { size: 560 }); setFont(ctx, af, true);
+          ctx.fillStyle = rgba(env.accent, env.dark ? 0.16 : 0.12); ctx.textAlign = 'right';
+          ctx.fillText(sp.anchor || C.anchor, W - 60, C.align === 'bottom' ? g.top + 514 : H - 230); ctx.textAlign = 'left';
+        }
+        paintFrame(env);
+        if (logo && C.logo === 'top') reveal(env, 0, function () { logo.draw(logoY); });
+        if (k) reveal(env, 0, function () { k.draw(kY); });
+        parts.forEach(function (b, j) { reveal(env, j + 1, function () { b.draw(partY[j]); }); });
+        if (logo && C.logo !== 'top') reveal(env, parts.length + 1, function () { logo.draw(logoY); });
+        paintFurniture(env, g, i, n, 'cover', images);
+      }
+    };
   }
 
   function surfaceFor(brand, idx, n, type) {
@@ -794,6 +850,57 @@
     if (r === 'bookend_light') return book ? 'light' : 'dark';
     if (r === 'alternate') return book ? 'dark' : (idx % 2 ? 'light' : 'dark');
     return book ? 'dark' : 'light';
+  }
+
+  /* ---------- schema: tolerant reading of SLIDES (aliases are reported, never silent) ---------- */
+  var FIELDS = {
+    common: ['layout', 'surface', 'kicker', 'title', 'body', 'note', 'image', 'duration'],
+    cover: ['setup', 'subtitle', 'anchor'], statement: ['statement'], numeral: ['number', 'label'], list: ['items'],
+    compare: ['left', 'right'], flow: ['nodes', 'direction'], chips: ['chips'], formula: ['rows'], code: ['lines'],
+    stat: ['number', 'label', 'source'], quote: ['quote', 'author'], cta: ['button', 'url']
+  };
+  var ALIAS = { heading: 'title', headline: 'title', hook: 'title', eyebrow: 'kicker', tag: 'kicker', description: 'body', desc: 'body', text: 'body', supporting: 'body', cta: 'button', link: 'url', value: 'number', caption: 'note', takeaway: 'note' };
+  var REQUIRED = { statement: 'statement', list: 'items', compare: 'left', flow: 'nodes', chips: 'chips', formula: 'rows', code: 'lines', stat: 'number', quote: 'quote', cta: 'title', cover: 'title' };
+  function asObj(v, key) { return typeof v === 'string' ? (function () { var o = {}; o[key] = v; return o; })() : (v || {}); }
+  function normalizeSlide(sp0, qa) {
+    var lay = sp0.layout || 'statement', allowed = FIELDS.common.concat(FIELDS[lay] || []), sp = {};
+    if (lay === 'cover') allowed = allowed.filter(function (k) { return k !== 'body'; });
+    Object.keys(sp0).forEach(function (k) {
+      var v = sp0[k], key = k;
+      if (allowed.indexOf(k) < 0) {
+        if (lay === 'flow' && /^(items|steps|stages)$/.test(k)) key = 'nodes';
+        else if (lay === 'list' && /^(nodes|steps|points|bullets)$/.test(k)) key = 'items';
+        else if (lay === 'compare' && /^(before|a)$/.test(k)) key = 'left';
+        else if (lay === 'compare' && /^(after|b)$/.test(k)) key = 'right';
+        else if (lay === 'code' && k === 'code') { key = 'lines'; if (typeof v === 'string') v = v.split('\n'); }
+        else if (lay === 'quote' && k === 'text') key = 'quote';
+        else if (lay === 'cover' && /^(body|supporting|text)$/.test(k)) key = 'subtitle';
+        else if (ALIAS[k]) key = ALIAS[k];
+        if (allowed.indexOf(key) < 0) { qa.push({ level: 'warn', msg: 'Unknown field "' + k + '" ignored' }); return; }
+        if (sp0[key] != null) { qa.push({ level: 'warn', msg: 'Field "' + k + '" duplicates "' + key + '": ignored' }); return; }
+        qa.push({ level: 'warn', msg: 'Field "' + k + '" read as "' + key + '": use "' + key + '"' });
+      }
+      sp[key] = v;
+    });
+    if (sp.nodes) sp.nodes = [].concat(sp.nodes).map(function (x) {
+      x = asObj(x, 'text');
+      if (!x.text && (x.title || x.name)) { x.text = x.title || x.name; }
+      else if (x.text && x.title && !x.label) { x.detail = x.detail || x.text; x.text = x.title; }
+      return x;
+    });
+    if (sp.items) sp.items = [].concat(sp.items).map(function (x) {
+      x = asObj(x, 'title');
+      if (!x.title) x.title = x.label || x.heading || x.name || '';
+      if (!x.text) x.text = x.description || x.body || '';
+      return x;
+    });
+    ['left', 'right'].forEach(function (k) { if (sp[k]) { var o = asObj(sp[k], 'text'); if (!o.label && o.title) o.label = o.title; if (!o.text) o.text = o.body || o.description || ''; sp[k] = o; } });
+    if (sp.rows) sp.rows = [].concat(sp.rows).map(function (x) { return typeof x === 'string' ? { label: '', value: x } : { label: x.label || x.key || '', value: x.value || x.text || '' }; });
+    if (sp.lines && typeof sp.lines === 'string') sp.lines = sp.lines.split('\n');
+    if (REQUIRED[lay] && !sp[REQUIRED[lay]]) qa.push({ level: 'error', msg: 'Layout "' + lay + '" needs "' + REQUIRED[lay] + '"' });
+    if (lay === 'compare' && !sp.right) qa.push({ level: 'error', msg: 'Layout "compare" needs "right"' });
+    sp.layout = lay;
+    return sp;
   }
 
   /* ---------- assets ---------- */
@@ -872,7 +979,7 @@
   ];
   function lintText(t, banned, qa) {
     var raw = String(t).replace(/\*/g, ''), n = norm(t);
-    if (/[—–]/.test(raw)) qa.push({ level: 'error', msg: 'Dash in copy: "' + raw.slice(0, 40) + '"' });
+    if (/[\u2014\u2013]/.test(raw)) qa.push({ level: 'error', msg: 'Dash in copy: "' + raw.slice(0, 40) + '"' });
     NOT_BUT.forEach(function (re) { var m = n.match(re); if (m) qa.push({ level: 'error', msg: '"Not X, but Y": "' + m[0].slice(0, 50) + '"' }); });
     // sentence pair: "Non vuol dire X. Vuol dire Y" / "It isn't X. It's Y" (same verb restated)
     var sent = n.split(/(?<=[.!?])\s+/);
@@ -895,86 +1002,110 @@
   }
 
   /* ---------- UI ---------- */
-  function download(canvas, name) {
+  function saveBlob(blob, name) {
     return new Promise(function (res) {
-      canvas.toBlob(function (b) {
-        var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name;
-        document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); res(); }, 400);
-      }, 'image/png');
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); res(); }, 400);
     });
   }
+  function download(canvas, name) { return new Promise(function (res) { canvas.toBlob(function (b) { saveBlob(b, name).then(res); }, 'image/png'); }); }
 
   function css() {
     if (document.getElementById('yoca-css')) return;
     var st = document.createElement('style'); st.id = 'yoca-css';
     st.textContent = '.yoca-wrap{font:14px/1.4 system-ui,sans-serif;color:#222;background:#EEE;padding:16px;min-height:100vh;box-sizing:border-box}' +
-      '.yoca-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.yoca-bar b{font-size:15px}' +
-      '.yoca-btn{border:0;background:#222;color:#fff;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600}' +
+      '.yoca-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.yoca-bar b{font-size:15px}' +
+      '.yoca-btn{border:0;background:#222;color:#fff;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600}.yoca-btn.alt{background:#8a1c1c}' +
       '.yoca-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}' +
       '.yoca-card{background:#fff;border-radius:10px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.1)}' +
       '.yoca-card canvas{width:100%;height:auto;display:block;border-radius:4px}' +
       '.yoca-qa{font-size:12px;margin:8px 0;padding:6px 8px;border-radius:6px;background:#EAF7EA;color:#245c24}' +
       '.yoca-qa.warn{background:#FFF5DB;color:#7a5600}.yoca-qa.error{background:#FDE7E7;color:#8a1c1c}' +
-      '.yoca-row{display:flex;justify-content:space-between;align-items:center;gap:8px}.yoca-row .yoca-btn{padding:6px 10px;font-size:12px}';
+      '.yoca-row{display:flex;justify-content:space-between;align-items:center;gap:8px}.yoca-row .yoca-btn{padding:6px 10px;font-size:12px}' +
+      '.yoca-report{margin-top:16px}.yoca-report textarea{width:100%;min-height:160px;font:12px/1.4 monospace;box-sizing:border-box}';
     document.head.appendChild(st);
   }
 
   /* ---------- main ---------- */
   function render(cfg) {
     var brand = merge(DEFAULT_BRAND, cfg.brand || {});
-    var slides = cfg.slides || [], opt = cfg.options || {}, ui = UI[opt.lang] || UI.it;
+    var opt = cfg.options || {}, ui = UI[opt.lang] || UI.it, lang = opt.lang || 'it';
+    var fmtWarn = opt.format && !FORMATS[opt.format] ? opt.format : null;
+    setFormat(opt.format || 'carousel');
+    var raw = cfg.slides || [];
     var mount = typeof opt.mount === 'string' ? document.querySelector(opt.mount) : (opt.mount || document.getElementById('yoca') || document.body);
     css();
-    mount.innerHTML = '<div class="yoca-wrap"><div class="yoca-bar"><b></b><button class="yoca-btn" disabled>' + ui.loading + '</button><span class="yoca-st"></span></div><div class="yoca-grid"></div></div>';
-    mount.querySelector('b').textContent = brand.name + ' · ' + slides.length + ' × 1080×1350';
-    var grid = mount.querySelector('.yoca-grid'), allBtn = mount.querySelector('.yoca-btn'), st = mount.querySelector('.yoca-st');
-    var base = slug(opt.file || brand.name);
-    var L = brand.logo;
+    mount.innerHTML = '<div class="yoca-wrap"><div class="yoca-bar"><b></b><button class="yoca-btn yoca-all" disabled></button><button class="yoca-btn alt yoca-rep" hidden></button><span class="yoca-st"></span></div>' +
+      '<div class="yoca-grid"></div><details class="yoca-report" hidden><summary></summary><textarea readonly></textarea></details></div>';
+    mount.querySelector('b').textContent = brand.name + ' · ' + FMT.label + ' · ' + raw.length + ' × ' + W + '×' + H;
+    var grid = mount.querySelector('.yoca-grid'), allBtn = mount.querySelector('.yoca-all'), repBtn = mount.querySelector('.yoca-rep'), st = mount.querySelector('.yoca-st');
+    var det = mount.querySelector('.yoca-report'), ta = det.querySelector('textarea');
+    allBtn.textContent = ui.loading;
+    var base = slug(opt.file || brand.name), L = brand.logo;
+    var norm0 = raw.map(function (r) { var q = []; return { sp: normalizeSlide(r || {}, q), qa: q }; });
     return Promise.all([loadFonts(brand), loadImg(L.url_light), loadImg(L.url_dark), loadImg(L.icon_light), loadImg(L.icon_dark),
-      loadImg((slides[0] || {}).image)]).then(function (r) {
+      loadImg((norm0[0] || { sp: {} }).sp.image)]).then(function (r) {
       var missing = r[0], images = { light: r[1], dark: r[2], icon_light: r[3], icon_dark: r[4], cover: r[5] };
-      var results = [], canvases = [];
-      slides.forEach(function (sp, i) {
-        var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-        var ctx = cv.getContext('2d'); ctx.textBaseline = 'alphabetic';
-        var type = sp.layout === 'cover' || i === 0 && !sp.layout ? 'cover' : sp.layout;
-        var surface = sp.surface || surfaceFor(brand, i, slides.length, type);
-        var res;
+      var results = [], canvases = [], plans = [], n = norm0.length, dpr = FMT.dpr || 1;
+      norm0.forEach(function (it, i) {
+        var sp = it.sp;
+        var cv = document.createElement('canvas'); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+        var ctx = cv.getContext('2d'); ctx.scale(dpr, dpr); ctx.textBaseline = 'alphabetic';
+        var type = sp.layout === 'cover' ? 'cover' : sp.layout;
+        var surface = sp.surface || surfaceFor(brand, i, n, type);
+        var qa = it.qa.slice(), plan = null;
         try {
-          res = type === 'cover' ? renderCover(ctx, brand, sp, i, slides.length, surface, images) : renderStandard(ctx, brand, sp, i, slides.length, surface, images);
-        } catch (e) { res = { qa: [{ level: 'error', msg: 'Render error: ' + e.message }] }; }
-        if (!LAYOUTS[type] && type !== 'cover') res.qa.push({ level: 'error', msg: 'Unknown layout "' + type + '": rendered as statement' });
-        if (i > 0 && slides[i - 1].layout === sp.layout && type !== 'cover' && type !== 'cta') res.qa.push({ level: 'error', msg: 'Same layout as previous card: pick another layout' });
-        lintSlide(sp, brand, opt.lang || 'it', res.qa);
-        if (type === 'cta' && sp.button && norm(sp.button).replace(/^https?:\/\//, '').replace(/^www\./, '') === norm(sp.url || brand.cta_url).replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')) res.qa.push({ level: 'error', msg: 'CTA button repeats the URL: write the action (e.g. "Fai il test")' });
+          plan = type === 'cover' ? planCover(ctx, brand, sp, i, n, surface, images) : planStandard(ctx, brand, sp, i, n, surface, images);
+          plan.paint(null); qa = qa.concat(plan.qa);
+        } catch (e) { qa.push({ level: 'error', msg: 'Render error: ' + e.message }); }
+        if (!LAYOUTS[type] && type !== 'cover') qa.push({ level: 'error', msg: 'Unknown layout "' + type + '": rendered as statement' });
+        if (i > 0 && norm0[i - 1].sp.layout === sp.layout && type !== 'cover' && type !== 'cta') qa.push({ level: 'error', msg: 'Same layout as previous card: pick another layout' });
+        lintSlide(sp, brand, lang, qa);
+        if (type === 'cta' && sp.button && norm(sp.button).replace(/^https?:\/\//, '').replace(/^www\./, '') === norm(sp.url || brand.cta_url).replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')) qa.push({ level: 'error', msg: 'CTA button repeats the URL: write the action (e.g. "Fai il test")' });
         var words = wordCount([sp.title, sp.body, sp.statement, sp.quote, (sp.items || []).map(function (x) { return x.title + ' ' + (x.text || ''); }).join(' ')].join(' '));
-        if (words > 70) res.qa.push({ level: 'warn', msg: words + ' words: over 70 per slide' });
-        if (missing.length) res.qa.push({ level: 'warn', msg: ui.fonts + ' (' + missing.join(', ') + ')' });
-        results.push({ index: i + 1, layout: type, surface: surface, scale: res.scale, qa: res.qa });
-        canvases.push(cv);
+        if (words > 70) qa.push({ level: 'warn', msg: words + ' words: over 70 per card' });
+        if (missing.length) qa.push({ level: 'warn', msg: ui.fonts + ' (' + missing.join(', ') + ')' });
+        if (fmtWarn && i === 0) qa.push({ level: 'error', msg: 'Unknown format "' + fmtWarn + '": rendered as carousel' });
+        results.push({ index: i + 1, layout: type, surface: surface, scale: plan ? plan.scale : 0, qa: qa });
+        canvases.push(cv); plans.push(plan);
         var card = document.createElement('div'); card.className = 'yoca-card';
-        var lvl = res.qa.some(function (q) { return q.level === 'error'; }) ? 'error' : (res.qa.length ? 'warn' : '');
-        var name = base + '_' + String(i + 1).padStart(2, '0') + '.png';
+        var lvl = qa.some(function (q) { return q.level === 'error'; }) ? 'error' : (qa.length ? 'warn' : '');
+        var name = n === 1 ? base + '.png' : base + '_' + String(i + 1).padStart(2, '0') + '.png';
         card.appendChild(cv);
-        var qa = document.createElement('div'); qa.className = 'yoca-qa ' + lvl;
-        qa.textContent = res.qa.length ? res.qa.map(function (q) { return (q.level === 'error' ? '✖ ' : '⚠ ') + q.msg; }).join(' | ') : '✔ ' + ui.ok;
+        var qd = document.createElement('div'); qd.className = 'yoca-qa ' + lvl;
+        qd.textContent = qa.length ? qa.map(function (q) { return (q.level === 'error' ? '✖ ' : '⚠ ') + q.msg; }).join(' | ') : '✔ ' + ui.ok;
         var row = document.createElement('div'); row.className = 'yoca-row';
         var lab = document.createElement('span'); lab.textContent = String(i + 1).padStart(2, '0') + ' · ' + type + ' · ' + surface;
         var b1 = document.createElement('button'); b1.className = 'yoca-btn'; b1.textContent = ui.one;
         b1.onclick = function () { download(cv, name); };
-        row.appendChild(lab); row.appendChild(b1); card.appendChild(qa); card.appendChild(row); grid.appendChild(card);
+        row.appendChild(lab); row.appendChild(b1); card.appendChild(qd); card.appendChild(row); grid.appendChild(card);
       });
-      allBtn.disabled = false; allBtn.textContent = ui.all;
+      allBtn.disabled = false; allBtn.textContent = n === 1 ? ui.one : ui.all;
       allBtn.onclick = function () {
         var p = Promise.resolve();
-        canvases.forEach(function (cv, i) { p = p.then(function () { return download(cv, base + '_' + String(i + 1).padStart(2, '0') + '.png'); }); });
+        canvases.forEach(function (cv, i) { p = p.then(function () { return download(cv, n === 1 ? base + '.png' : base + '_' + String(i + 1).padStart(2, '0') + '.png'); }); });
       };
-      var errs = results.reduce(function (a, r) { return a + r.qa.filter(function (q) { return q.level === 'error'; }).length; }, 0);
+      var errs = 0, warns = 0, lines = ['yOCA QA · ' + FMT_NAME + ' · ' + n + ' card'];
+      results.forEach(function (rs) {
+        errs += rs.qa.filter(function (q) { return q.level === 'error'; }).length; warns += rs.qa.filter(function (q) { return q.level !== 'error'; }).length;
+        if (rs.qa.length) lines.push('Card ' + String(rs.index).padStart(2, '0') + ' · ' + rs.layout + ': ' + rs.qa.map(function (q) { return (q.level === 'error' ? '✖ ' : '⚠ ') + q.msg; }).join('; '));
+      });
+      lines.push(ui.fix);
+      var report = lines.join('\n');
       st.textContent = errs ? ('✖ ' + errs + ' QA error(s)') : '✔ ' + ui.ok;
-      G.YOCA_RESULT = { brand: brand.name, slides: results, canvases: canvases, fonts_missing: missing };
+      if (errs || warns) {
+        repBtn.hidden = false; repBtn.textContent = ui.report; det.hidden = false; det.querySelector('summary').textContent = ui.report; ta.value = report;
+        if (errs) det.open = true;
+        repBtn.onclick = function () {
+          var done = function () { repBtn.textContent = ui.copied; };
+          var fail = function () { det.open = true; ta.focus(); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { } };
+          try { navigator.clipboard.writeText(report).then(done, fail); } catch (e) { fail(); }
+        };
+      }
+      G.YOCA_RESULT = { format: FMT_NAME, brand: brand.name, slides: results, canvases: canvases, plans: plans, fonts_missing: missing, report: report };
       return G.YOCA_RESULT;
     });
   }
 
-  G.YOCA = { version: '1.1', lint: lintText, render: render, W: W, H: H, contrast: contrast };
+  G.YOCA = { version: '2.0', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
 })(typeof window !== 'undefined' ? window : this);
