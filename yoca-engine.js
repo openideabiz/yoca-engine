@@ -1,4 +1,4 @@
-/*! yOCA+ Visual Engine v2.1 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
+/*! yOCA+ Visual Engine v2.2 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
  * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { format, lang, file, mount } })
  * The engine is identical for every client. Every visual decision comes from BRAND_TOKENS.
  * Never edit this code inside a chat. Fill BRAND_TOKENS and SLIDES only.
@@ -1033,11 +1033,39 @@
       var verb = m2[1].split(' ')[0] === 'si' ? m2[1] : m2[1].split(' ')[0];
       if (verb.length > 1 && sent[i + 1].indexOf(verb) === 0) qa.push({ level: 'error', msg: '"Not X, but Y" across sentences: "' + sent[i].slice(0, 30) + '… ' + sent[i + 1].slice(0, 25) + '"' });
     }
+    // short negation followed by a short correction: "Non semplice o leggibile. Deciso." / "Not a tool. A system."
+    for (var j = 0; j + 1 < sent.length; j++) {
+      var a = sent[j].split(/\s+/).filter(Boolean), b2 = sent[j + 1].split(/\s+/).filter(Boolean);
+      if (/^(non|not|no|ni)$/.test(a[0] || '') && a.length <= 6 && b2.length <= 4) qa.push({ level: 'error', msg: '"Not X. Y" correction: "' + sent[j].slice(0, 30) + ' ' + sent[j + 1].slice(0, 20) + '"' });
+    }
+    lintDates(n, qa);
+    var ph = raw.match(/\{\{[^}]*\}\}|\[[A-Z ]{3,}\]|\bTBD\b|\bXXX\b|lorem ipsum/i);
+    if (ph) qa.push({ level: 'error', msg: 'Placeholder to fill: "' + ph[0] + '"' });
     (banned || []).forEach(function (w) {
       var b = norm(w).trim(); if (!b) return;
       var stem = b.length > 5 && b.indexOf(' ') < 0 ? b.slice(0, -1) : b;
       var re = new RegExp('(^|[^a-z0-9])' + stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (stem === b ? '' : '[a-z]?') + '([^a-z0-9]|$)');
       if (re.test(n)) qa.push({ level: 'error', msg: 'Banned word: "' + w + '"' });
+    });
+  }
+
+  // weekday + date must match the calendar (nearest occurrence from today)
+  var WD = { it: ['domenica', 'lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'], en: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'], es: ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'] };
+  var MO = { it: ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'], en: ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'], es: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'] };
+  function lintDates(n, qa) {
+    Object.keys(WD).forEach(function (L) {
+      var wd = WD[L].join('|'), mo = MO[L].join('|');
+      var res = [new RegExp('\\b(' + wd + '),?\\s+(\\d{1,2})(?:\\s+de)?\\s+(' + mo + ')(?:\\s+(\\d{4}))?', 'g'), new RegExp('\\b(' + wd + '),?\\s+(' + mo + ')\\s+(\\d{1,2})(?:,?\\s+(\\d{4}))?', 'g')];
+      res.forEach(function (re, k) {
+        var m;
+        while ((m = re.exec(n))) {
+          var wi = WD[L].indexOf(m[1]), day = +(k ? m[3] : m[2]), mi = MO[L].indexOf(k ? m[2] : m[3]), yr = m[4] ? +m[4] : null;
+          var now = new Date(), y = yr || now.getFullYear(), d = new Date(y, mi, day);
+          if (!yr && d < new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)) { y++; d = new Date(y, mi, day); }
+          if (d.getDate() !== day) { qa.push({ level: 'error', msg: 'Date check: "' + m[0] + '" does not exist' }); continue; }
+          if (d.getDay() !== wi) qa.push({ level: 'error', msg: 'Date check: ' + day + ' ' + MO[L][mi] + ' ' + y + ' is ' + WD[L][d.getDay()] + ', not ' + m[1] });
+        }
+      });
     });
   }
   function lintSlide(sp, brand, lang, qa) {
@@ -1265,5 +1293,5 @@
     });
   }
 
-  G.YOCA = { version: '2.1', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
+  G.YOCA = { version: '2.2', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
 })(typeof window !== 'undefined' ? window : this);
