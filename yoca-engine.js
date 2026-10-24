@@ -1,4 +1,4 @@
-/*! yOCA+ Visual Engine v2.0 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story.
+/*! yOCA+ Visual Engine v2.1 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
  * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { format, lang, file, mount } })
  * The engine is identical for every client. Every visual decision comes from BRAND_TOKENS.
  * Never edit this code inside a chat. Fill BRAND_TOKENS and SLIDES only.
@@ -69,9 +69,9 @@
   };
 
   var UI = {
-    it: { all: 'Scarica tutte (PNG)', one: 'Scarica PNG', ok: 'QA superato', fonts: 'Font non caricati: uso fallback', loading: 'Caricamento font…', report: 'Copia report QA', copied: 'Report copiato: incollalo in chat', fix: 'Correggi solo il blocco yOCA DATA (BRAND e SLIDES), poi ricrea il Canvas con la cornice di SKILL.md senza toccare altro codice.' },
-    en: { all: 'Download all (PNG)', one: 'Download PNG', ok: 'QA passed', fonts: 'Fonts not loaded: using fallback', loading: 'Loading fonts…', report: 'Copy QA report', copied: 'Report copied: paste it in the chat', fix: 'Fix only the yOCA DATA block (BRAND and SLIDES), then recreate the Canvas from the SKILL.md shell without touching any other code.' },
-    es: { all: 'Descargar todas (PNG)', one: 'Descargar PNG', ok: 'QA superado', fonts: 'Fuentes no cargadas: uso fallback', loading: 'Cargando fuentes…', report: 'Copiar informe QA', copied: 'Informe copiado: pégalo en el chat', fix: 'Corrige solo el bloque yOCA DATA (BRAND y SLIDES) y vuelve a crear el Canvas con el marco de SKILL.md sin tocar otro código.' }
+    it: { all: 'Scarica tutte (PNG)', one: 'Scarica PNG', ok: 'QA superato', fonts: 'Font non caricati: uso fallback', loading: 'Caricamento font…', report: 'Copia report QA', pdf: 'Scarica PDF', png300: 'PNG 300 dpi', play: '\u25B6 Anteprima', video: 'Scarica video', recording: 'Registrazione\u2026 tieni la pagina aperta', novideo: 'Questo browser non registra video', working: 'Preparo il PDF\u2026', copied: 'Report copiato: incollalo in chat', fix: 'Correggi solo il blocco yOCA DATA (BRAND e SLIDES), poi ricrea il Canvas con la cornice di SKILL.md senza toccare altro codice.' },
+    en: { all: 'Download all (PNG)', one: 'Download PNG', ok: 'QA passed', fonts: 'Fonts not loaded: using fallback', loading: 'Loading fonts…', report: 'Copy QA report', pdf: 'Download PDF', png300: 'PNG 300 dpi', play: '\u25B6 Preview', video: 'Download video', recording: 'Recording\u2026 keep this page open', novideo: 'This browser cannot record video', working: 'Building the PDF\u2026', copied: 'Report copied: paste it in the chat', fix: 'Fix only the yOCA DATA block (BRAND and SLIDES), then recreate the Canvas from the SKILL.md shell without touching any other code.' },
+    es: { all: 'Descargar todas (PNG)', one: 'Descargar PNG', ok: 'QA superado', fonts: 'Fuentes no cargadas: uso fallback', loading: 'Cargando fuentes…', report: 'Copiar informe QA', pdf: 'Descargar PDF', png300: 'PNG 300 ppp', play: '\u25B6 Vista previa', video: 'Descargar v\u00EDdeo', recording: 'Grabando\u2026 mant\u00E9n la p\u00E1gina abierta', novideo: 'Este navegador no graba v\u00EDdeo', working: 'Preparando el PDF\u2026', copied: 'Informe copiado: pégalo en el chat', fix: 'Corrige solo el bloque yOCA DATA (BRAND y SLIDES) y vuelve a crear el Canvas con el marco de SKILL.md sin tocar otro código.' }
   };
 
   /* ---------- utils ---------- */
@@ -133,9 +133,10 @@
     var F = env.brand.fonts[R.f] || env.brand.fonts.body;
     if (R.f === 'mono' && !F.family) F = env.brand.fonts.body;
     var boost = (role === 'meta' || role === 'tagline' || role === 'wordmark') ? 1 : (FMT.boost || 1);
+    if (/^cover_/.test(role) && boost < 1) boost = 1;
     var size = (R.fixed ? R.size : R.size * env.s) * boost;
     if (R.min) {
-      var m = env.brand.min_size[R.min] || 0;
+      var m = (env.brand.min_size[R.min] || 0) * boost;
       if (size < m) size = m;
     }
     size = Math.round(size);
@@ -523,7 +524,8 @@
     var ctx = env.ctx, f = fontOf(env, 'button');
     setFont(ctx, f, true); var tw = ctx.measureText(String(label).toUpperCase()).width;
     var bh = Math.round(f.size * 2.6), bw = Math.min(env.w, tw + f.size * 2.4);
-    var U = url ? layoutText(env, String(url).replace(/^https?:\/\//, '').replace(/\/$/, ''), 'url', env.w) : null;
+    var clean = function (u) { return String(u || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').toLowerCase(); };
+    var U = url && !(FMT.mark && clean(url) === clean(env.brand.cta_url)) ? layoutText(env, String(url).replace(/^https?:\/\//, '').replace(/\/$/, ''), 'url', env.w) : null;
     var h = bh + (U ? 26 + U.h : 0);
     return {
       h: h, kind: 'button', draw: function (y) {
@@ -573,7 +575,12 @@
     carousel:    { W: 1080, H: 1350, progress: true,  swipe: true,  mark: false, label: 'carousel' },
     post:        { W: 1080, H: 1350, progress: false, swipe: false, mark: true,  label: 'post 4:5' },
     post_square: { W: 1080, H: 1080, progress: false, swipe: false, mark: true,  label: 'post 1:1' },
-    story:       { W: 1080, H: 1920, progress: false, swipe: false, mark: true,  safe_top: 220, safe_bottom: 250, boost: 1.22, label: 'story 9:16' }
+    story:       { W: 1080, H: 1920, progress: false, swipe: false, mark: true,  safe_top: 220, safe_bottom: 250, boost: 1.22, label: 'story 9:16' },
+    flyer_a5:    { W: 1080, H: 1532, progress: false, swipe: false, mark: true,  print: true, dpr: 1748 / 1080, pt: [419.53, 595.28], boost: 0.9, max_words: 110, label: 'flyer A5' },
+    flyer_a4:    { W: 1080, H: 1527, progress: false, swipe: false, mark: true,  print: true, dpr: 2480 / 1080, pt: [595.28, 841.89], boost: 0.85, max_words: 120, label: 'flyer A4' },
+    brochure_a4: { W: 1080, H: 1527, progress: false, swipe: false, mark: true,  print: true, dpr: 2480 / 1080, pt: [595.28, 841.89], boost: 0.72, max_words: 170, label: 'brochure A4' },
+    video_story: { W: 1080, H: 1920, progress: false, swipe: false, mark: true,  video: true, safe_top: 220, safe_bottom: 340, boost: 1.22, max_words: 40, label: 'video 9:16' },
+    video_post:  { W: 1080, H: 1350, progress: false, swipe: false, mark: true,  video: true, max_words: 40, label: 'video 4:5' }
   };
   var FMT = FORMATS.carousel, FMT_NAME = 'carousel';
   function setFormat(name) { FMT_NAME = FORMATS[name] ? name : 'carousel'; FMT = FORMATS[FMT_NAME]; W = FMT.W; H = FMT.H; }
@@ -726,6 +733,29 @@
       return { head: kickerBlock(env, sp.kicker), body: [bigNumberBlock(env, sp.number || '0', sp.label, 'stat'), group([sp.title ? textBlock(env, sp.title, 'title', { em: titleEm(env) }) : null, sp.body ? textBlock(env, sp.body, 'body', { color: env.muted, em: bodyEm(env) }) : null], 20), note(env, sp.source)] };
     },
     quote: function (env, sp) { return { head: kickerBlock(env, sp.kicker), body: [quoteBlock(env, sp.quote || '', sp.author), note(env, sp.note)] }; },
+    page: function (env, sp, images) {
+      var gap = Math.round(20 * env.s);
+      var body = (sp.sections || []).map(function (x) {
+        switch (x.type) {
+          case 'statement': return statementBlock(env, x.statement || '');
+          case 'list': return listBlock(env, x.items || []);
+          case 'compare': return compareBlock(env, x.left, x.right);
+          case 'flow': return flowBlock(env, x.nodes, x.direction);
+          case 'chips': return chipsBlock(env, x.chips);
+          case 'formula': return formulaBlock(env, x.rows);
+          case 'code': return codeBlock(env, x.lines);
+          case 'stat': return group([bigNumberBlock(env, x.number || '0', x.label, 'stat'), x.body ? textBlock(env, x.body, 'body', { color: env.muted, em: bodyEm(env) }) : null], gap);
+          case 'quote': return quoteBlock(env, x.quote || '', x.author);
+          case 'heading': return textBlock(env, x.title || '', 'title', { em: titleEm(env), font: { size: 54 } });
+          case 'text': return textBlock(env, x.body || '', 'body', { color: env.muted, em: bodyEm(env) });
+          case 'button': return buttonBlock(env, x.button || '', x.url || env.brand.cta_url);
+          case 'note': return note(env, x.note);
+          case 'logo': return logoBlock(env, images, true);
+        }
+        return null;
+      });
+      return { head: header(env, sp), body: body.concat([note(env, sp.note)]) };
+    },
     cta: function (env, sp, images) {
       return {
         head: kickerBlock(env, sp.kicker),
@@ -745,7 +775,8 @@
   function planStandard(ctx, brand, sp, i, n, surface, images) {
     var g = geom(brand), top = g.top, bottom = g.bottom, avail = bottom - top;
     var chosen = null, s, qaTmp;
-    var maxS = { quote: 1.5, statement: 1.4, numeral: 1.3, stat: 1.3, cta: 1.3 }[sp.layout] || 1.25;
+    var maxS = { quote: 1.5, statement: 1.4, numeral: 1.3, stat: 1.3, cta: 1.3, page: 1.15 }[sp.layout] || 1.25;
+    if (FMT.print) maxS *= 1.3;
     for (s = maxS; s >= 0.6; s -= 0.025) {
       qaTmp = [];
       var env = makeEnv(ctx, brand, surface, s, qaTmp);
@@ -857,10 +888,10 @@
     common: ['layout', 'surface', 'kicker', 'title', 'body', 'note', 'image', 'duration'],
     cover: ['setup', 'subtitle', 'anchor'], statement: ['statement'], numeral: ['number', 'label'], list: ['items'],
     compare: ['left', 'right'], flow: ['nodes', 'direction'], chips: ['chips'], formula: ['rows'], code: ['lines'],
-    stat: ['number', 'label', 'source'], quote: ['quote', 'author'], cta: ['button', 'url']
+    stat: ['number', 'label', 'source'], quote: ['quote', 'author'], cta: ['button', 'url'], page: ['sections']
   };
   var ALIAS = { heading: 'title', headline: 'title', hook: 'title', eyebrow: 'kicker', tag: 'kicker', description: 'body', desc: 'body', text: 'body', supporting: 'body', cta: 'button', link: 'url', value: 'number', caption: 'note', takeaway: 'note' };
-  var REQUIRED = { statement: 'statement', list: 'items', compare: 'left', flow: 'nodes', chips: 'chips', formula: 'rows', code: 'lines', stat: 'number', quote: 'quote', cta: 'title', cover: 'title' };
+  var REQUIRED = { statement: 'statement', list: 'items', compare: 'left', flow: 'nodes', chips: 'chips', formula: 'rows', code: 'lines', stat: 'number', quote: 'quote', cta: 'title', cover: 'title', page: 'sections' };
   function asObj(v, key) { return typeof v === 'string' ? (function () { var o = {}; o[key] = v; return o; })() : (v || {}); }
   function normalizeSlide(sp0, qa) {
     var lay = sp0.layout || 'statement', allowed = FIELDS.common.concat(FIELDS[lay] || []), sp = {};
@@ -897,6 +928,18 @@
     ['left', 'right'].forEach(function (k) { if (sp[k]) { var o = asObj(sp[k], 'text'); if (!o.label && o.title) o.label = o.title; if (!o.text) o.text = o.body || o.description || ''; sp[k] = o; } });
     if (sp.rows) sp.rows = [].concat(sp.rows).map(function (x) { return typeof x === 'string' ? { label: '', value: x } : { label: x.label || x.key || '', value: x.value || x.text || '' }; });
     if (sp.lines && typeof sp.lines === 'string') sp.lines = sp.lines.split('\n');
+    var SEC = { statement: 1, list: 1, compare: 1, flow: 1, chips: 1, formula: 1, code: 1, stat: 1, quote: 1, heading: 1, text: 1, button: 1, note: 1, logo: 1 };
+    if (sp.sections) sp.sections = [].concat(sp.sections).map(function (x, j) {
+      x = x || {}; var t = x.type || x.layout || '';
+      if (!SEC[t]) { qa.push({ level: 'error', msg: 'Section ' + (j + 1) + ': unknown type "' + t + '"' }); return {}; }
+      if (t === 'heading' || t === 'text' || t === 'button' || t === 'note' || t === 'logo') {
+        var o = { type: t }; o.title = x.title || x.text; o.body = x.body || x.text; o.button = x.button || x.label || x.text; o.url = x.url || x.link; o.note = x.note || x.text; return o;
+      }
+      var q2 = [], src = Object.assign({}, x); delete src.type; src.layout = t;
+      var n2 = normalizeSlide(src, q2); n2.type = t;
+      q2.forEach(function (q) { qa.push({ level: q.level, msg: 'Section ' + (j + 1) + ' (' + t + '): ' + q.msg }); });
+      return n2;
+    });
     if (REQUIRED[lay] && !sp[REQUIRED[lay]]) qa.push({ level: 'error', msg: 'Layout "' + lay + '" needs "' + REQUIRED[lay] + '"' });
     if (lay === 'compare' && !sp.right) qa.push({ level: 'error', msg: 'Layout "compare" needs "right"' });
     sp.layout = lay;
@@ -967,6 +1010,7 @@
     (sp.nodes || []).forEach(function (x) { out.push(String(x.text || '')); out.push(String(x.detail || '')); });
     ['left', 'right'].forEach(function (k) { if (sp[k]) out.push(String(sp[k].text || '')); });
     (sp.rows || []).forEach(function (x) { out.push(String(x.value || '')); });
+    (sp.sections || []).forEach(function (x) { out = out.concat(slideTexts(x)); });
     return out.filter(Boolean);
   }
   var NOT_BUT = [
@@ -1001,6 +1045,40 @@
     slideTexts(sp).forEach(function (t) { lintText(t, list, qa); });
   }
 
+  /* ---------- print export: PNG 300 dpi (pHYs) and a minimal PDF writer (JPEG pages) ---------- */
+  var CRC = (function () { var t = [], c, n, k; for (n = 0; n < 256; n++) { c = n; for (k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(u8) { var c = 0xFFFFFFFF; for (var i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function blobOf(canvas, type, q) { return new Promise(function (res) { canvas.toBlob(res, type, q); }); }
+  function bytesOf(blob) { return blob.arrayBuffer().then(function (b) { return new Uint8Array(b); }); }
+  function pngWithDpi(u8, dpi) {
+    var ppm = Math.round(dpi / 0.0254), chunk = new Uint8Array(21), dv = new DataView(chunk.buffer);
+    dv.setUint32(0, 9); chunk.set([112, 72, 89, 115], 4); dv.setUint32(8, ppm); dv.setUint32(12, ppm); chunk[16] = 1;
+    dv.setUint32(17, crc32(chunk.subarray(4, 17)));
+    var out = new Uint8Array(u8.length + 21); out.set(u8.subarray(0, 33)); out.set(chunk, 33); out.set(u8.subarray(33), 54);
+    return out;
+  }
+  function makePDF(pages, ptW, ptH) {
+    var parts = [], off = 0, xref = [], enc = function (str) { var u = new Uint8Array(str.length); for (var i = 0; i < str.length; i++) u[i] = str.charCodeAt(i) & 255; return u; };
+    function put(x) { var u = typeof x === 'string' ? enc(x) : x; parts.push(u); off += u.length; }
+    function obj(id, body, stream) { xref[id] = off; put(id + ' 0 obj\n' + body + '\n'); if (stream) { put('stream\n'); put(stream); put('\nendstream\n'); } put('endobj\n'); }
+    put('%PDF-1.4\n%âãÏÓ\n');
+    var n = pages.length, kids = [];
+    for (var i = 0; i < n; i++) kids.push((3 + i * 3) + ' 0 R');
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + n + ' >>');
+    pages.forEach(function (pg, i) {
+      var pid = 3 + i * 3, iid = pid + 1, cid = pid + 2, w = ptW.toFixed(2), h = ptH.toFixed(2);
+      var content = 'q ' + w + ' 0 0 ' + h + ' 0 0 cm /Im0 Do Q';
+      obj(pid, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + w + ' ' + h + '] /Resources << /XObject << /Im0 ' + iid + ' 0 R >> >> /Contents ' + cid + ' 0 R >>');
+      obj(iid, '<< /Type /XObject /Subtype /Image /Width ' + pg.w + ' /Height ' + pg.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + pg.jpg.length + ' >>', pg.jpg);
+      obj(cid, '<< /Length ' + content.length + ' >>', enc(content));
+    });
+    var xo = off, last = 2 + n * 3, x = 'xref\n0 ' + (last + 1) + '\n0000000000 65535 f \n';
+    for (var k = 1; k <= last; k++) x += String(xref[k]).padStart(10, '0') + ' 00000 n \n';
+    put(x + 'trailer\n<< /Size ' + (last + 1) + ' /Root 1 0 R >>\nstartxref\n' + xo + '\n%%EOF\n');
+    return new Blob(parts, { type: 'application/pdf' });
+  }
+
   /* ---------- UI ---------- */
   function saveBlob(blob, name) {
     return new Promise(function (res) {
@@ -1022,6 +1100,7 @@
       '.yoca-qa{font-size:12px;margin:8px 0;padding:6px 8px;border-radius:6px;background:#EAF7EA;color:#245c24}' +
       '.yoca-qa.warn{background:#FFF5DB;color:#7a5600}.yoca-qa.error{background:#FDE7E7;color:#8a1c1c}' +
       '.yoca-row{display:flex;justify-content:space-between;align-items:center;gap:8px}.yoca-row .yoca-btn{padding:6px 10px;font-size:12px}' +
+      '.yoca-video{margin-bottom:16px}.yoca-player{width:min(100%,420px);height:auto;display:block;border-radius:6px;margin-bottom:10px;background:#000}' +
       '.yoca-report{margin-top:16px}.yoca-report textarea{width:100%;min-height:160px;font:12px/1.4 monospace;box-sizing:border-box}';
     document.head.appendChild(st);
   }
@@ -1037,7 +1116,7 @@
     css();
     mount.innerHTML = '<div class="yoca-wrap"><div class="yoca-bar"><b></b><button class="yoca-btn yoca-all" disabled></button><button class="yoca-btn alt yoca-rep" hidden></button><span class="yoca-st"></span></div>' +
       '<div class="yoca-grid"></div><details class="yoca-report" hidden><summary></summary><textarea readonly></textarea></details></div>';
-    mount.querySelector('b').textContent = brand.name + ' · ' + FMT.label + ' · ' + raw.length + ' × ' + W + '×' + H;
+    mount.querySelector('b').textContent = brand.name + ' \u00B7 ' + FMT.label + ' \u00B7 ' + raw.length + ' \u00D7 ' + Math.round(W * (FMT.dpr || 1)) + '\u00D7' + Math.round(H * (FMT.dpr || 1)) + (FMT.print ? ' (300 dpi)' : '');
     var grid = mount.querySelector('.yoca-grid'), allBtn = mount.querySelector('.yoca-all'), repBtn = mount.querySelector('.yoca-rep'), st = mount.querySelector('.yoca-st');
     var det = mount.querySelector('.yoca-report'), ta = det.querySelector('textarea');
     allBtn.textContent = ui.loading;
@@ -1046,45 +1125,124 @@
     return Promise.all([loadFonts(brand), loadImg(L.url_light), loadImg(L.url_dark), loadImg(L.icon_light), loadImg(L.icon_dark),
       loadImg((norm0[0] || { sp: {} }).sp.image)]).then(function (r) {
       var missing = r[0], images = { light: r[1], dark: r[2], icon_light: r[3], icon_dark: r[4], cover: r[5] };
-      var results = [], canvases = [], plans = [], n = norm0.length, dpr = FMT.dpr || 1;
+      var results = [], canvases = [], plans = [], makers = [], planners = [], n = norm0.length;
       norm0.forEach(function (it, i) {
         var sp = it.sp;
-        var cv = document.createElement('canvas'); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-        var ctx = cv.getContext('2d'); ctx.scale(dpr, dpr); ctx.textBaseline = 'alphabetic';
         var type = sp.layout === 'cover' ? 'cover' : sp.layout;
         var surface = sp.surface || surfaceFor(brand, i, n, type);
-        var qa = it.qa.slice(), plan = null;
-        try {
-          plan = type === 'cover' ? planCover(ctx, brand, sp, i, n, surface, images) : planStandard(ctx, brand, sp, i, n, surface, images);
-          plan.paint(null); qa = qa.concat(plan.qa);
-        } catch (e) { qa.push({ level: 'error', msg: 'Render error: ' + e.message }); }
+        var planOn = function (x) { return type === 'cover' ? planCover(x, brand, sp, i, n, surface, images) : planStandard(x, brand, sp, i, n, surface, images); };
+        var make = function (dpr) {
+          var c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+          var x = c.getContext('2d'); x.scale(dpr, dpr); x.textBaseline = 'alphabetic';
+          var pl = planOn(x); pl.paint(null); return { cv: c, plan: pl };
+        };
+        makers.push(make); planners.push({ planOn: planOn, sp: sp, surface: surface });
+        var qa = it.qa.slice(), plan = null, cv = document.createElement('canvas');
+        try { var mk = make(1); cv = mk.cv; plan = mk.plan; qa = qa.concat(plan.qa); }
+        catch (e) { cv.width = W; cv.height = H; qa.push({ level: 'error', msg: 'Render error: ' + e.message }); }
         if (!LAYOUTS[type] && type !== 'cover') qa.push({ level: 'error', msg: 'Unknown layout "' + type + '": rendered as statement' });
-        if (i > 0 && norm0[i - 1].sp.layout === sp.layout && type !== 'cover' && type !== 'cta') qa.push({ level: 'error', msg: 'Same layout as previous card: pick another layout' });
+        if (i > 0 && norm0[i - 1].sp.layout === sp.layout && type !== 'cover' && type !== 'cta' && type !== 'page') qa.push({ level: 'error', msg: 'Same layout as previous card: pick another layout' });
         lintSlide(sp, brand, lang, qa);
         if (type === 'cta' && sp.button && norm(sp.button).replace(/^https?:\/\//, '').replace(/^www\./, '') === norm(sp.url || brand.cta_url).replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')) qa.push({ level: 'error', msg: 'CTA button repeats the URL: write the action (e.g. "Fai il test")' });
         var words = wordCount([sp.title, sp.body, sp.statement, sp.quote, (sp.items || []).map(function (x) { return x.title + ' ' + (x.text || ''); }).join(' ')].join(' '));
-        if (words > 70) qa.push({ level: 'warn', msg: words + ' words: over 70 per card' });
+        if (words > (FMT.max_words || 70)) qa.push({ level: 'warn', msg: words + ' words: over ' + (FMT.max_words || 70) + ' per card' });
         if (missing.length) qa.push({ level: 'warn', msg: ui.fonts + ' (' + missing.join(', ') + ')' });
         if (fmtWarn && i === 0) qa.push({ level: 'error', msg: 'Unknown format "' + fmtWarn + '": rendered as carousel' });
         results.push({ index: i + 1, layout: type, surface: surface, scale: plan ? plan.scale : 0, qa: qa });
         canvases.push(cv); plans.push(plan);
         var card = document.createElement('div'); card.className = 'yoca-card';
         var lvl = qa.some(function (q) { return q.level === 'error'; }) ? 'error' : (qa.length ? 'warn' : '');
-        var name = n === 1 ? base + '.png' : base + '_' + String(i + 1).padStart(2, '0') + '.png';
+        var name = (n === 1 ? base : base + '_' + String(i + 1).padStart(2, '0')) + '.png';
         card.appendChild(cv);
         var qd = document.createElement('div'); qd.className = 'yoca-qa ' + lvl;
         qd.textContent = qa.length ? qa.map(function (q) { return (q.level === 'error' ? '✖ ' : '⚠ ') + q.msg; }).join(' | ') : '✔ ' + ui.ok;
         var row = document.createElement('div'); row.className = 'yoca-row';
         var lab = document.createElement('span'); lab.textContent = String(i + 1).padStart(2, '0') + ' · ' + type + ' · ' + surface;
-        var b1 = document.createElement('button'); b1.className = 'yoca-btn'; b1.textContent = ui.one;
-        b1.onclick = function () { download(cv, name); };
+        var b1 = document.createElement('button'); b1.className = 'yoca-btn'; b1.textContent = FMT.print ? ui.png300 : ui.one;
+        b1.onclick = function () { FMT.print ? savePrintPNG(i, name) : download(cv, name); };
         row.appendChild(lab); row.appendChild(b1); card.appendChild(qd); card.appendChild(row); grid.appendChild(card);
       });
-      allBtn.disabled = false; allBtn.textContent = n === 1 ? ui.one : ui.all;
-      allBtn.onclick = function () {
-        var p = Promise.resolve();
-        canvases.forEach(function (cv, i) { p = p.then(function () { return download(cv, n === 1 ? base + '.png' : base + '_' + String(i + 1).padStart(2, '0') + '.png'); }); });
-      };
+      function fileName(i, ext) { return (n === 1 ? base : base + '_' + String(i + 1).padStart(2, '0')) + '.' + ext; }
+      function savePrintPNG(i, name) {
+        var big = makers[i](FMT.dpr).cv;
+        return blobOf(big, 'image/png').then(bytesOf).then(function (u8) { return saveBlob(new Blob([pngWithDpi(u8, 300)], { type: 'image/png' }), name); });
+      }
+      function buildPDF() {
+        var pages = [], p = Promise.resolve();
+        makers.forEach(function (mk) {
+          p = p.then(function () { var big = mk(FMT.dpr).cv; return blobOf(big, 'image/jpeg', 0.92).then(bytesOf).then(function (u8) { pages.push({ jpg: u8, w: big.width, h: big.height }); big.width = 1; }); });
+        });
+        return p.then(function () { return makePDF(pages, FMT.pt[0], FMT.pt[1]); });
+      }
+      G.YOCA_PDF = buildPDF;
+      allBtn.disabled = false;
+      if (FMT.print) {
+        allBtn.textContent = ui.pdf;
+        allBtn.onclick = function () { allBtn.disabled = true; allBtn.textContent = ui.working; buildPDF().then(function (b) { return saveBlob(b, base + '.pdf'); }).then(function () { allBtn.disabled = false; allBtn.textContent = ui.pdf; }); };
+        var pngAll = document.createElement('button'); pngAll.className = 'yoca-btn'; pngAll.textContent = ui.png300;
+        pngAll.onclick = function () { var p = Promise.resolve(); makers.forEach(function (m, i) { p = p.then(function () { return savePrintPNG(i, fileName(i, 'png')); }); }); };
+        allBtn.parentNode.insertBefore(pngAll, allBtn.nextSibling);
+      } else {
+        allBtn.textContent = n === 1 ? ui.one : ui.all;
+        allBtn.onclick = function () {
+          var p = Promise.resolve();
+          canvases.forEach(function (cv, i) { p = p.then(function () { return download(cv, fileName(i, 'png')); }); });
+        };
+      }
+      if (FMT.video) buildVideo();
+      function buildVideo() {
+        var M = brand.motion, pc = document.createElement('canvas'); pc.width = W; pc.height = H; pc.className = 'yoca-player';
+        var px = pc.getContext('2d'); px.textBaseline = 'alphabetic';
+        var vplans = planners.map(function (q) { try { return q.planOn(px); } catch (e) { return null; } });
+        var durs = planners.map(function (q, k) {
+          if (q.sp.duration) return q.sp.duration * 1000;
+          var w = wordCount(slideTexts(q.sp).join(' ')), bl = vplans[k] ? vplans[k].blocks : 3;
+          return Math.max(3000, Math.min(9000, 1400 + bl * M.stagger + M.reveal + w * 280));
+        });
+        var total = durs.reduce(function (a, b) { return a + b; }, 0);
+        var bgOf = function (q) { return q.surface === 'dark' ? brand.colors.dark_bg : brand.colors.light_bg; };
+        function frame(ms) {
+          var acc = 0, k = 0;
+          while (k < durs.length - 1 && ms >= acc + durs[k]) { acc += durs[k]; k++; }
+          var t = ms - acc, pl = vplans[k];
+          if (pl) pl.paint(t);
+          var left = durs[k] - t;
+          if (k < durs.length - 1 && left < M.fade) {
+            px.save(); px.globalAlpha = 1 - left / M.fade; px.fillStyle = bgOf(planners[k + 1]); px.fillRect(0, 0, W, H); px.restore();
+            var sb = brand.strip;   // the brand strip never fades: static overlay on every frame
+            if (sb && sb.colors && sb.colors.length) { var sh = sb.height || 16, sw = W / sb.colors.length; sb.colors.forEach(function (c, j) { px.fillStyle = c; px.fillRect(Math.floor(j * sw), H - sh, Math.ceil(sw), sh); }); }
+          }
+        }
+        frame(total);
+        var box = document.createElement('div'); box.className = 'yoca-video';
+        var play = document.createElement('button'); play.className = 'yoca-btn'; play.textContent = ui.play;
+        var rec = document.createElement('button'); rec.className = 'yoca-btn'; rec.textContent = ui.video;
+        var info = document.createElement('span'); info.textContent = (total / 1000).toFixed(1) + ' s · ' + n + ' scene';
+        var vbar = document.createElement('div'); vbar.className = 'yoca-bar'; vbar.appendChild(play); vbar.appendChild(rec); vbar.appendChild(info);
+        box.appendChild(pc); box.appendChild(vbar); grid.parentNode.insertBefore(box, grid);
+        var raf = null;
+        function run(onEnd) {
+          var t0 = performance.now(); cancelAnimationFrame(raf);
+          (function step() { var ms = performance.now() - t0; frame(Math.min(ms, total)); if (ms < total) raf = requestAnimationFrame(step); else if (onEnd) onEnd(); })();
+        }
+        play.onclick = function () { run(); };
+        rec.onclick = function () {
+          var types = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+          var mime = types.filter(function (m) { return window.MediaRecorder && MediaRecorder.isTypeSupported(m); })[0];
+          if (!mime || !pc.captureStream) { info.textContent = ui.novideo; return; }
+          var chunks = [], mr = new MediaRecorder(pc.captureStream(30), { mimeType: mime, videoBitsPerSecond: 8000000 });
+          mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+          mr.onstop = function () {
+            var ext = /mp4/.test(mime) ? 'mp4' : 'webm';
+            saveBlob(new Blob(chunks, { type: mime.split(';')[0] }), base + '.' + ext);
+            rec.disabled = false; rec.textContent = ui.video; info.textContent = (total / 1000).toFixed(1) + ' s · ' + ext.toUpperCase();
+            G.YOCA_VIDEO.last = { mime: mime, bytes: chunks.reduce(function (a, c) { return a + c.size; }, 0) };
+          };
+          rec.disabled = true; rec.textContent = ui.recording; mr.start(250);
+          run(function () { setTimeout(function () { mr.stop(); }, 300); });
+        };
+        G.YOCA_VIDEO = { frame: frame, total: total, durations: durs, canvas: pc, record: rec.onclick };
+      }
       var errs = 0, warns = 0, lines = ['yOCA QA · ' + FMT_NAME + ' · ' + n + ' card'];
       results.forEach(function (rs) {
         errs += rs.qa.filter(function (q) { return q.level === 'error'; }).length; warns += rs.qa.filter(function (q) { return q.level !== 'error'; }).length;
@@ -1107,5 +1265,5 @@
     });
   }
 
-  G.YOCA = { version: '2.0', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
+  G.YOCA = { version: '2.1', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
 })(typeof window !== 'undefined' ? window : this);
