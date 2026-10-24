@@ -1,4 +1,4 @@
-/*! yOCA+ Carousel Engine v1.0 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native.
+/*! yOCA+ Carousel Engine v1.1 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native.
  * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { lang, file, mount } })
  * The engine is identical for every client. Every visual decision comes from BRAND_TOKENS.
  * Never edit this code inside a chat. Fill BRAND_TOKENS and SLIDES only.
@@ -23,7 +23,7 @@
       neutral: '#D4D4D7', neutral_dark: '#6E6E74', panel: '#F3F3F4', panel_dark: '#2A2A2E'
     },
     layout: { margin: 96, content_top: 126, content_bottom: 1060, progress_y: 1150, min_gap: 44 },
-    min_size: { body: 32, caption: 28, mono: 22 },
+    min_size: { body: 32, caption: 28, mono: 22, title: 48 },
     type_scale: {},
     rhythm: 'bookend_dark',          // bookend_dark | bookend_light | all_light | all_dark | alternate
     texture: { type: 'none', size: 60, alpha: 1, on: 'all' }, // grid | dots | lines | none ; on: all | bookends | internals
@@ -47,9 +47,9 @@
     cover_title: { f: 'display', size: 104, lh: 1.04, track: -0.02 },
     cover_sub: { f: 'body', size: 40, lh: 1.3, min: 'body' },
     kicker: { f: 'mono', size: 26, lh: 1.2, track: 0.12, min: 'mono' },
-    title: { f: 'display', size: 68, lh: 1.1, track: -0.01 },
+    title: { f: 'display', size: 68, lh: 1.1, track: -0.01, min: 'title' },
     body: { f: 'body', size: 40, lh: 1.36, min: 'body' },
-    statement: { f: 'display', size: 54, lh: 1.16, track: -0.01 },
+    statement: { f: 'display', size: 54, lh: 1.16, track: -0.01, min: 'title' },
     item_title: { f: 'display', size: 40, lh: 1.2 },
     item_text: { f: 'body', size: 34, lh: 1.32, min: 'caption' },
     label: { f: 'mono', size: 24, lh: 1.2, track: 0.1, min: 'mono' },
@@ -58,10 +58,10 @@
     quote: { f: 'body', size: 50, lh: 1.3, style: 'italic' },
     code: { f: 'mono', size: 30, lh: 1.5, min: 'mono', upper: false },
     url: { f: 'mono', size: 24, lh: 1.2, track: 0.04, min: 'mono', upper: false },
-    cta_title: { f: 'display', size: 76, lh: 1.07, track: -0.015 },
+    cta_title: { f: 'display', size: 76, lh: 1.07, track: -0.015, min: 'title' },
     button: { f: 'mono', size: 30, lh: 1, track: 0.06, min: 'mono' },
     meta: { f: 'mono', size: 22, lh: 1.2, track: 0.1, fixed: true },
-    node: { f: 'display', size: 36, lh: 1.2 },
+    node: { f: 'display', size: 36, lh: 1.2, min: 'caption' },
     node_text: { f: 'body', size: 30, lh: 1.3, min: 'caption' },
     wordmark: { f: 'display', size: 44, lh: 1, fixed: true },
     tagline: { f: 'mono', size: 20, lh: 1.2, fixed: true }
@@ -358,14 +358,19 @@
     nodes = nodes || [];
     var horiz = direction === 'right' && nodes.length <= 3;
     var pad = 30, arrow = horiz ? 56 : 60, ctx = env.ctx;
-    var nw = horiz ? (env.w - arrow * (nodes.length - 1)) / nodes.length : env.w * 0.86;
+    var nw = horiz ? (env.w - arrow * (nodes.length - 1)) / nodes.length : env.w;
+    var labW = horiz ? 0 : Math.round(env.w * 0.32);
+    if (!horiz) { pad = 26; arrow = 44; }
     var built = nodes.map(function (n, i) {
       var active = n.accent || (n.accent === undefined && i === nodes.length - 1);
-      var lab = n.label ? layoutText(env, n.label, 'label', nw - pad * 2) : null;
-      var ov = fitOver(env, n.text || '', 'node', nw - pad * 2);
-      var t = layoutText(env, n.text || '', 'node', nw - pad * 2, ov);
-      var d = n.detail ? layoutText(env, n.detail, 'node_text', nw - pad * 2) : null;
-      return { n: n, active: active, lab: lab, t: t, d: d, h: (lab ? lab.h + 14 : 0) + t.h + (d ? 10 + d.h : 0) + pad * 2 };
+      var tw = nw - pad * 2 - (n.label ? labW : 0);
+      var lab = n.label ? layoutText(env, n.label, 'label', horiz ? nw - pad * 2 : labW - 20) : null;
+      var ov = fitOver(env, n.text || '', 'node', tw);
+      var t = layoutText(env, n.text || '', 'node', tw, ov);
+      var d = n.detail ? layoutText(env, n.detail, 'node_text', tw) : null;
+      var body = t.h + (d ? 10 + d.h : 0);
+      var h = horiz ? (lab ? lab.h + 14 : 0) + body + pad * 2 : Math.max(lab ? lab.h : 0, body) + pad * 2;
+      return { n: n, active: active, lab: lab, t: t, d: d, h: h };
     });
     var minH = horiz ? Math.round(230 * env.s) : 0;
     var maxH = Math.max.apply(null, built.map(function (b) { return b.h; }).concat([minH]));
@@ -378,10 +383,13 @@
         ctx.fillStyle = fill; rr(ctx, x, y, nw, hh, env.r); ctx.fill();
       } else { ctx.fillStyle = env.bg; rr(ctx, x, y, nw, hh, env.r); ctx.fill(); ctx.strokeStyle = env.ink; ctx.lineWidth = 2; rr(ctx, x + 1, y + 1, nw - 2, hh - 2, env.r); ctx.stroke(); }
       ctx.restore();
-      var tc = fill ? onColor(fill, '#FFFFFF', env.brand.colors.ink) : env.ink;
+      var tc = fill ? (fill === env.accent ? env.onAccent : onColor(fill, '#FFFFFF', env.brand.colors.ink)) : env.ink;
       var sub = fill ? tc : env.muted;
-      if (b.lab) drawText(env, b.lab, x + pad, y + pad, { color: sub });
       var body = b.t.h + (b.d ? 10 + b.d.h : 0), yy = y + hh - pad - body;
+      if (!horiz) {
+        if (b.lab) drawText(env, b.lab, x + pad, y + (hh - b.lab.h) / 2, { color: sub });
+        x += b.lab ? labW : 0; yy = y + (hh - body) / 2;
+      } else if (b.lab) drawText(env, b.lab, x + pad, y + pad, { color: sub });
       drawText(env, b.t, x + pad, yy, { color: tc, em: fill ? 'underline' : titleEm(env), bold: true });
       if (b.d) drawText(env, b.d, x + pad, yy + b.t.h + 10, { color: sub });
     }
@@ -401,10 +409,8 @@
           });
         } else {
           built.forEach(function (b, i) {
-            var x = env.x + (i * 40);
-            if (x + nw > env.x + env.w) x = env.x + env.w - nw;
-            node(b, x, y, b.h);
-            if (i < built.length - 1) arrowTo(x + 70, y + b.h + 8, x + 70 + 40, y + b.h + arrow - 8);
+            node(b, env.x, y, b.h);
+            if (i < built.length - 1) arrowTo(env.x + 60, y + b.h + 8, env.x + 60, y + b.h + arrow - 8);
             y += b.h + arrow;
           });
         }
@@ -515,7 +521,7 @@
     var ctx = env.ctx, f = fontOf(env, 'button');
     setFont(ctx, f, true); var tw = ctx.measureText(String(label).toUpperCase()).width;
     var bh = Math.round(f.size * 2.6), bw = Math.min(env.w, tw + f.size * 2.4);
-    var U = url ? layoutText(env, url, 'url', env.w) : null;
+    var U = url ? layoutText(env, String(url).replace(/^https?:\/\//, '').replace(/\/$/, ''), 'url', env.w) : null;
     var h = bh + (U ? 26 + U.h : 0);
     return {
       h: h, kind: 'button', draw: function (y) {
@@ -844,6 +850,50 @@
     });
   }
 
+
+  /* ---------- copy lint (deterministic: dashes, "not X but Y", banned words) ---------- */
+  function norm(t) { return String(t || '').replace(/\*/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function slideTexts(sp) {
+    var out = [];
+    ['kicker', 'setup', 'title', 'subtitle', 'body', 'statement', 'note', 'quote', 'button', 'label', 'source'].forEach(function (k) { if (sp[k]) out.push(String(sp[k])); });
+    (sp.items || []).forEach(function (x) { out.push(String(x.title || '')); out.push(String(x.text || '')); });
+    (sp.nodes || []).forEach(function (x) { out.push(String(x.text || '')); out.push(String(x.detail || '')); });
+    ['left', 'right'].forEach(function (k) { if (sp[k]) out.push(String(sp[k].text || '')); });
+    (sp.rows || []).forEach(function (x) { out.push(String(x.value || '')); });
+    return out.filter(Boolean);
+  }
+  var NOT_BUT = [
+    /\bnon solo\b[^.!?]*\bma\b/i, /\bnon\b[^.!?]{1,80},\s*ma\b/i,
+    /,\s*non\s+(di|del|della|dei|delle|da|dal|con|per|un|una|il|la|lo|le|i|gli|solo|piu|in)\b/i,
+    /\bnot (just|only|merely)\b[^.!?]*\bbut\b/i, /\bnot\b[^.!?]{1,80},\s*but\b/i,
+    /,\s*not\s+(a|an|the|just|only|by|with|for|in|of)\b/i,
+    /\bno solo\b[^.!?]*\bsino\b/i, /\bno\b[^.!?]{1,80},?\s*sino\b/i,
+    /,\s*no\s+(de|del|con|por|un|una|el|la|los|las|en)\b/i
+  ];
+  function lintText(t, banned, qa) {
+    var raw = String(t).replace(/\*/g, ''), n = norm(t);
+    if (/[—–]/.test(raw)) qa.push({ level: 'error', msg: 'Dash in copy: "' + raw.slice(0, 40) + '"' });
+    NOT_BUT.forEach(function (re) { var m = n.match(re); if (m) qa.push({ level: 'error', msg: '"Not X, but Y": "' + m[0].slice(0, 50) + '"' }); });
+    // sentence pair: "Non vuol dire X. Vuol dire Y" / "It isn't X. It's Y" (same verb restated)
+    var sent = n.split(/(?<=[.!?])\s+/);
+    for (var i = 0; i + 1 < sent.length; i++) {
+      var m2 = sent[i].match(/\b(?:non|not|no|isn'?t|aren'?t|doesn'?t|don'?t)\s+((?:si\s+)?[a-z']+(?:\s+[a-z']+)?)/);
+      if (!m2) continue;
+      var verb = m2[1].split(' ')[0] === 'si' ? m2[1] : m2[1].split(' ')[0];
+      if (verb.length > 1 && sent[i + 1].indexOf(verb) === 0) qa.push({ level: 'error', msg: '"Not X, but Y" across sentences: "' + sent[i].slice(0, 30) + '… ' + sent[i + 1].slice(0, 25) + '"' });
+    }
+    (banned || []).forEach(function (w) {
+      var b = norm(w).trim(); if (!b) return;
+      var stem = b.length > 5 && b.indexOf(' ') < 0 ? b.slice(0, -1) : b;
+      var re = new RegExp('(^|[^a-z0-9])' + stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (stem === b ? '' : '[a-z]?') + '([^a-z0-9]|$)');
+      if (re.test(n)) qa.push({ level: 'error', msg: 'Banned word: "' + w + '"' });
+    });
+  }
+  function lintSlide(sp, brand, lang, qa) {
+    var bw = brand.banned_words || {}, list = [].concat(bw.all || [], bw[lang] || []);
+    slideTexts(sp).forEach(function (t) { lintText(t, list, qa); });
+  }
+
   /* ---------- UI ---------- */
   function download(canvas, name) {
     return new Promise(function (res) {
@@ -894,7 +944,9 @@
           res = type === 'cover' ? renderCover(ctx, brand, sp, i, slides.length, surface, images) : renderStandard(ctx, brand, sp, i, slides.length, surface, images);
         } catch (e) { res = { qa: [{ level: 'error', msg: 'Render error: ' + e.message }] }; }
         if (!LAYOUTS[type] && type !== 'cover') res.qa.push({ level: 'error', msg: 'Unknown layout "' + type + '": rendered as statement' });
-        if (i > 0 && slides[i - 1].layout === sp.layout && type !== 'cover' && type !== 'cta') res.qa.push({ level: 'warn', msg: 'Same layout as previous slide' });
+        if (i > 0 && slides[i - 1].layout === sp.layout && type !== 'cover' && type !== 'cta') res.qa.push({ level: 'error', msg: 'Same layout as previous card: pick another layout' });
+        lintSlide(sp, brand, opt.lang || 'it', res.qa);
+        if (type === 'cta' && sp.button && norm(sp.button).replace(/^https?:\/\//, '').replace(/^www\./, '') === norm(sp.url || brand.cta_url).replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')) res.qa.push({ level: 'error', msg: 'CTA button repeats the URL: write the action (e.g. "Fai il test")' });
         var words = wordCount([sp.title, sp.body, sp.statement, sp.quote, (sp.items || []).map(function (x) { return x.title + ' ' + (x.text || ''); }).join(' ')].join(' '));
         if (words > 70) res.qa.push({ level: 'warn', msg: words + ' words: over 70 per slide' });
         if (missing.length) res.qa.push({ level: 'warn', msg: ui.fonts + ' (' + missing.join(', ') + ')' });
@@ -924,5 +976,5 @@
     });
   }
 
-  G.YOCA = { version: '1.0', render: render, W: W, H: H, contrast: contrast };
+  G.YOCA = { version: '1.1', lint: lintText, render: render, W: W, H: H, contrast: contrast };
 })(typeof window !== 'undefined' ? window : this);
