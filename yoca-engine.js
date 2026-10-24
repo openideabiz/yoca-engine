@@ -1,4 +1,4 @@
-/*! yOCA+ Visual Engine v2.2 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
+/*! yOCA+ Visual Engine v2.2.1 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
  * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { format, lang, file, mount } })
  * The engine is identical for every client. Every visual decision comes from BRAND_TOKENS.
  * Never edit this code inside a chat. Fill BRAND_TOKENS and SLIDES only.
@@ -991,7 +991,7 @@
           return Promise.all(ws.map(function (w) { return document.fonts.load(w + ' 40px "' + name + '"', 'AaÈà'); }).concat(e.italic ? [document.fonts.load('italic 400 40px "' + name + '"')] : []));
         });
     });
-    var timeout = new Promise(function (res) { setTimeout(res, 8000); });
+    var timeout = new Promise(function (res) { setTimeout(res, 15000); });
     return Promise.race([Promise.all(jobs), timeout]).then(function () {
       // fonts.check() returns true for unknown families, so test for a loaded FontFace instead
       var loaded = {};
@@ -1293,5 +1293,5 @@
     });
   }
 
-  G.YOCA = { version: '2.2', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
+  G.YOCA = { version: '2.2.1', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
 })(typeof window !== 'undefined' ? window : this);
