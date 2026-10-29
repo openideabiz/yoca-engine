@@ -1,4 +1,4 @@
-/*! yOCA+ Visual Engine v2.2.2 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
+/*! yOCA+ Visual Engine v2.2.3 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
  * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { format, lang, file, mount } })
  * The engine is identical for every client. Every visual decision comes from BRAND_TOKENS.
  * Never edit this code inside a chat. Fill BRAND_TOKENS and SLIDES only.
@@ -296,8 +296,8 @@
     var ctx = env.ctx, x = env.x, kind = env.brand.list_marker;
     var f = fontOf(env, 'label', { size: Math.max(26, size * 0.8) });
     if (kind === 'number') {
-      setFont(ctx, f, true); ctx.fillStyle = env.accentText(f.size) || env.accent;
-      ctx.fillText(String(i + 1).padStart(2, '0'), x, y + size * 0.82); return 74;
+      setFont(ctx, f, true); ctx.fillStyle = env.accentText(f.size) || env.ink; // never low-contrast text
+      ctx.fillText(String(i + 1).padStart(2, '0'), x, y + size * 0.82); return numberMarkerWidth(env, size);
     }
     if (kind === 'circle') {
       var d = size * 1.25; ctx.fillStyle = env.accent; ctx.beginPath(); ctx.arc(x + d / 2, y + size * 0.55, d / 2, 0, Math.PI * 2); ctx.fill();
@@ -308,8 +308,14 @@
     ctx.fillStyle = env.accent; ctx.fillRect(x, y + size * 0.55, 34, 4); return 56;
   }
 
+  // width of the "01" column: measured, so scaled formats (story) and wide label fonts never overlap the title
+  function numberMarkerWidth(env, size) {
+    var ctx = env.ctx, f = fontOf(env, 'label', { size: Math.max(26, size * 0.8) });
+    setFont(ctx, f, true); return Math.max(74, Math.ceil(ctx.measureText('00').width + f.size * 0.9));
+  }
+
   function listBlock(env, items) {
-    var probe = fontOf(env, 'item_title'), mw = { number: 74, circle: probe.size * 1.25 + 26, square: probe.size * 0.5 + 28, dash: 56 }[env.brand.list_marker] || 74;
+    var probe = fontOf(env, 'item_title'), mw = { number: numberMarkerWidth(env, probe.size), circle: probe.size * 1.25 + 26, square: probe.size * 0.5 + 28, dash: 56 }[env.brand.list_marker] || 74;
     var rows = items.map(function (it) {
       var tw = env.w - mw;
       var t = it.title ? layoutText(env, it.title, 'item_title', tw) : null;
@@ -498,7 +504,7 @@
     if (nw > env.w) env.qa.push({ level: 'error', msg: 'Number wider than canvas' });
     return {
       h: h, kind: role, draw: function (y) {
-        setFont(ctx, f, true); ctx.fillStyle = env.accentText(f.size) || env.accent;
+        setFont(ctx, f, true); ctx.fillStyle = env.accentText(f.size) || env.ink; // never low-contrast text
         ctx.fillText(String(number), env.x - f.size * 0.03, y + h * 0.98);
         if (lab) drawText(env, lab, env.x + nw + 32, y + h - lab.h, { color: env.muted });
       }
@@ -1296,5 +1302,5 @@
     });
   }
 
-  G.YOCA = { version: '2.2.2', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
+  G.YOCA = { version: '2.2.3', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
 })(typeof window !== 'undefined' ? window : this);
