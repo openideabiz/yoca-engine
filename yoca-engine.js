@@ -1,4 +1,4 @@
-/*! yOCA+ Visual Engine v2.2.3 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
+/*! yOCA+ Visual Engine v2.2.4 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
  * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { format, lang, file, mount } })
  * The engine is identical for every client. Every visual decision comes from BRAND_TOKENS.
  * Never edit this code inside a chat. Fill BRAND_TOKENS and SLIDES only.
@@ -37,7 +37,7 @@
     frame: 'none',                   // none | corner_ticks | border
     glow: false,
     cover: { title_style: 'plain', align: 'top', logo: 'bottom', image_opacity: 0.18, anchor: '' },
-    logo: { url_light: '', url_dark: '', wordmark: null, tagline: '', internal: 'none', text_fallback: true },
+    logo: { url_light: '', url_dark: '', wordmark: null, tagline: '', internal: 'none', text_fallback: true, height: 0, mark_height: 0 },
     motion: { reveal: 450, stagger: 140, rise: 28, delay: 150, fade: 250 },
     swipe_text: 'SWIPE →',
     cta_url: ''
@@ -550,7 +550,7 @@
     var ctx = env.ctx, L = env.brand.logo, img = env.dark ? images.dark : images.light;
     var tf = fontOf(env, 'tagline'), tag = withTagline && L.tagline ? layoutText(env, L.tagline, 'tagline', env.w) : null;
     if (img) {
-      var lh = sizeOver ? sizeOver * 1.4 : 64, lw = img.width * lh / img.height;
+      var lh = sizeOver ? (L.mark_height || sizeOver * 1.4) : (L.height || 64), lw = img.width * lh / img.height; // logo.height / logo.mark_height: px height of the image logo (blocks / format mark)
       return { h: lh + (tag ? 14 + tag.h : 0), kind: 'logo', draw: function (y) { ctx.drawImage(img, env.x, y, lw, lh); if (tag) drawText(env, tag, env.x, y + lh + 14, { color: env.muted }); } };
     }
     if (L.text_fallback === false) return null; // brands whose logo must never be replaced by text
@@ -1302,5 +1302,5 @@
     });
   }
 
-  G.YOCA = { version: '2.2.3', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
+  G.YOCA = { version: '2.2.4', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
 })(typeof window !== 'undefined' ? window : this);
