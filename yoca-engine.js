@@ -1,4 +1,4 @@
-/*! yOCA+ Visual Engine v2.2.1 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
+/*! yOCA+ Visual Engine v2.2.2 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
  * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { format, lang, file, mount } })
  * The engine is identical for every client. Every visual decision comes from BRAND_TOKENS.
  * Never edit this code inside a chat. Fill BRAND_TOKENS and SLIDES only.
@@ -33,11 +33,11 @@
     boxes: 'bar',                    // bar | fill | outline
     list_marker: 'number',           // number | circle | square | dash
     progress: { style: 'dots', align: 'left' }, // dots | bar | fraction | none
-    strip: null,                     // { colors: [...], height: 16 }
+    strip: null,                     // { colors: [...], height: 16, position: 'bottom' | 'top' }
     frame: 'none',                   // none | corner_ticks | border
     glow: false,
     cover: { title_style: 'plain', align: 'top', logo: 'bottom', image_opacity: 0.18, anchor: '' },
-    logo: { url_light: '', url_dark: '', wordmark: null, tagline: '', internal: 'none' },
+    logo: { url_light: '', url_dark: '', wordmark: null, tagline: '', internal: 'none', text_fallback: true },
     motion: { reveal: 450, stagger: 140, rise: 28, delay: 150, fade: 250 },
     swipe_text: 'SWIPE →',
     cta_url: ''
@@ -69,9 +69,9 @@
   };
 
   var UI = {
-    it: { all: 'Scarica tutte (PNG)', one: 'Scarica PNG', ok: 'QA superato', fonts: 'Font non caricati: uso fallback', loading: 'Caricamento font…', report: 'Copia report QA', pdf: 'Scarica PDF', png300: 'PNG 300 dpi', play: '\u25B6 Anteprima', video: 'Scarica video', recording: 'Registrazione\u2026 tieni la pagina aperta', novideo: 'Questo browser non registra video', working: 'Preparo il PDF\u2026', copied: 'Report copiato: incollalo in chat', fix: 'Correggi solo il blocco yOCA DATA (BRAND e SLIDES), poi ricrea il Canvas con la cornice di SKILL.md senza toccare altro codice.' },
-    en: { all: 'Download all (PNG)', one: 'Download PNG', ok: 'QA passed', fonts: 'Fonts not loaded: using fallback', loading: 'Loading fonts…', report: 'Copy QA report', pdf: 'Download PDF', png300: 'PNG 300 dpi', play: '\u25B6 Preview', video: 'Download video', recording: 'Recording\u2026 keep this page open', novideo: 'This browser cannot record video', working: 'Building the PDF\u2026', copied: 'Report copied: paste it in the chat', fix: 'Fix only the yOCA DATA block (BRAND and SLIDES), then recreate the Canvas from the SKILL.md shell without touching any other code.' },
-    es: { all: 'Descargar todas (PNG)', one: 'Descargar PNG', ok: 'QA superado', fonts: 'Fuentes no cargadas: uso fallback', loading: 'Cargando fuentes…', report: 'Copiar informe QA', pdf: 'Descargar PDF', png300: 'PNG 300 ppp', play: '\u25B6 Vista previa', video: 'Descargar v\u00EDdeo', recording: 'Grabando\u2026 mant\u00E9n la p\u00E1gina abierta', novideo: 'Este navegador no graba v\u00EDdeo', working: 'Preparando el PDF\u2026', copied: 'Informe copiado: pégalo en el chat', fix: 'Corrige solo el bloque yOCA DATA (BRAND y SLIDES) y vuelve a crear el Canvas con el marco de SKILL.md sin tocar otro código.' }
+    it: { all: 'Scarica tutte (PNG)', one: 'Scarica PNG', ok: 'QA superato', fonts: 'Font non caricati: uso fallback', logo: 'Logo non caricato: serve un URL pubblico che consenta CORS (es. jsDelivr). Il logo non viene sostituito da testo.', loading: 'Caricamento font…', report: 'Copia report QA', pdf: 'Scarica PDF', png300: 'PNG 300 dpi', play: '\u25B6 Anteprima', video: 'Scarica video', recording: 'Registrazione\u2026 tieni la pagina aperta', novideo: 'Questo browser non registra video', working: 'Preparo il PDF\u2026', copied: 'Report copiato: incollalo in chat', fix: 'Correggi solo il blocco yOCA DATA (BRAND e SLIDES), poi ricrea il Canvas con la cornice di SKILL.md senza toccare altro codice.' },
+    en: { all: 'Download all (PNG)', one: 'Download PNG', ok: 'QA passed', fonts: 'Fonts not loaded: using fallback', logo: 'Logo not loaded: it needs a public URL that allows CORS (e.g. jsDelivr). The logo is not replaced by text.', loading: 'Loading fonts…', report: 'Copy QA report', pdf: 'Download PDF', png300: 'PNG 300 dpi', play: '\u25B6 Preview', video: 'Download video', recording: 'Recording\u2026 keep this page open', novideo: 'This browser cannot record video', working: 'Building the PDF\u2026', copied: 'Report copied: paste it in the chat', fix: 'Fix only the yOCA DATA block (BRAND and SLIDES), then recreate the Canvas from the SKILL.md shell without touching any other code.' },
+    es: { all: 'Descargar todas (PNG)', one: 'Descargar PNG', ok: 'QA superado', fonts: 'Fuentes no cargadas: uso fallback', logo: 'Logo no cargado: necesita una URL pública que permita CORS (p. ej. jsDelivr). El logo no se sustituye por texto.', loading: 'Cargando fuentes…', report: 'Copiar informe QA', pdf: 'Descargar PDF', png300: 'PNG 300 ppp', play: '\u25B6 Vista previa', video: 'Descargar v\u00EDdeo', recording: 'Grabando\u2026 mant\u00E9n la p\u00E1gina abierta', novideo: 'Este navegador no graba v\u00EDdeo', working: 'Preparando el PDF\u2026', copied: 'Informe copiado: pégalo en el chat', fix: 'Corrige solo el bloque yOCA DATA (BRAND y SLIDES) y vuelve a crear el Canvas con el marco de SKILL.md sin tocar otro código.' }
   };
 
   /* ---------- utils ---------- */
@@ -547,6 +547,7 @@
       var lh = sizeOver ? sizeOver * 1.4 : 64, lw = img.width * lh / img.height;
       return { h: lh + (tag ? 14 + tag.h : 0), kind: 'logo', draw: function (y) { ctx.drawImage(img, env.x, y, lw, lh); if (tag) drawText(env, tag, env.x, y + lh + 14, { color: env.muted }); } };
     }
+    if (L.text_fallback === false) return null; // brands whose logo must never be replaced by text
     var wm = L.wordmark;
     if (!wm || !wm.parts) {
       var T = layoutText(env, env.brand.name, 'wordmark', env.w, sizeOver ? { size: sizeOver } : null);
@@ -662,7 +663,7 @@
   // brand mark for single formats (post, story, print): small wordmark left, URL right
   function paintMark(env, g, images) {
     var ctx = env.ctx, b = env.brand, lg = logoBlock(env, images, false, 32);
-    lg.draw(g.my - lg.h / 2);
+    if (lg) lg.draw(g.my - lg.h / 2);
     if (b.cta_url) {
       var f = fontOf(env, 'url'); setFont(ctx, f, false); ctx.fillStyle = env.muted; ctx.textAlign = 'right';
       ctx.fillText(String(b.cta_url).replace(/^https?:\/\//, '').replace(/\/$/, ''), W - env.x, g.my + f.size * 0.35); ctx.textAlign = 'left';
@@ -700,8 +701,8 @@
     }
     if (FMT.mark && slideType !== 'cover' && slideType !== 'cta') paintMark(env, g, images);
     if (b.strip && b.strip.colors && b.strip.colors.length) {
-      var sh = b.strip.height || 16, sw = W / b.strip.colors.length;
-      b.strip.colors.forEach(function (c, k) { ctx.fillStyle = c; ctx.fillRect(Math.floor(k * sw), H - sh, Math.ceil(sw), sh); });
+      var sh = b.strip.height || 16, sw = W / b.strip.colors.length, sy = b.strip.position === 'top' ? 0 : H - sh;
+      b.strip.colors.forEach(function (c, k) { ctx.fillStyle = c; ctx.fillRect(Math.floor(k * sw), sy, Math.ceil(sw), sh); });
     }
   }
 
@@ -996,7 +997,8 @@
       // fonts.check() returns true for unknown families, so test for a loaded FontFace instead
       var loaded = {};
       document.fonts.forEach(function (ff) { if (ff.status === 'loaded') loaded[String(ff.family).replace(/["']/g, '')] = 1; });
-      return Object.keys(fams).filter(function (n) { return !loaded[n]; });
+      // system fonts (google: false, no files) are not downloaded: never report them as missing
+      return Object.keys(fams).filter(function (n) { return !loaded[n] && (fams[n].google || (fams[n].files && fams[n].files.length)); });
     });
   }
 
@@ -1175,6 +1177,7 @@
         var words = wordCount([sp.title, sp.body, sp.statement, sp.quote, (sp.items || []).map(function (x) { return x.title + ' ' + (x.text || ''); }).join(' ')].join(' '));
         if (words > (FMT.max_words || 70)) qa.push({ level: 'warn', msg: words + ' words: over ' + (FMT.max_words || 70) + ' per card' });
         if (missing.length) qa.push({ level: 'warn', msg: ui.fonts + ' (' + missing.join(', ') + ')' });
+        if (i === 0 && (L.url_light || L.url_dark || L.text_fallback === false) && !images.light && !images.dark) qa.push({ level: 'warn', msg: ui.logo });
         if (fmtWarn && i === 0) qa.push({ level: 'error', msg: 'Unknown format "' + fmtWarn + '": rendered as carousel' });
         results.push({ index: i + 1, layout: type, surface: surface, scale: plan ? plan.scale : 0, qa: qa });
         canvases.push(cv); plans.push(plan);
@@ -1238,7 +1241,7 @@
           if (k < durs.length - 1 && left < M.fade) {
             px.save(); px.globalAlpha = 1 - left / M.fade; px.fillStyle = bgOf(planners[k + 1]); px.fillRect(0, 0, W, H); px.restore();
             var sb = brand.strip;   // the brand strip never fades: static overlay on every frame
-            if (sb && sb.colors && sb.colors.length) { var sh = sb.height || 16, sw = W / sb.colors.length; sb.colors.forEach(function (c, j) { px.fillStyle = c; px.fillRect(Math.floor(j * sw), H - sh, Math.ceil(sw), sh); }); }
+            if (sb && sb.colors && sb.colors.length) { var sh = sb.height || 16, sw = W / sb.colors.length, sy = sb.position === 'top' ? 0 : H - sh; sb.colors.forEach(function (c, j) { px.fillStyle = c; px.fillRect(Math.floor(j * sw), sy, Math.ceil(sw), sh); }); }
           }
         }
         frame(total);
@@ -1293,5 +1296,5 @@
     });
   }
 
-  G.YOCA = { version: '2.2.1', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
+  G.YOCA = { version: '2.2.2', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
 })(typeof window !== 'undefined' ? window : this);
