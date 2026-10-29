@@ -11,3 +11,7 @@ Each version is pinned to its commit and served by jsDelivr. v1.0:
 Never point the skill at `@main`: a pinned commit cannot change under a live client.
 
 © OPENIDEA.biz
+
+## Brand assets
+
+`assets/brands/<brand>/` holds public logo files that brand tokens load through jsDelivr (pinned commit), because the engine needs CORS-enabled image URLs. Only logos the brand already publishes may go here.
