@@ -14,4 +14,4 @@ Never point the skill at `@main`: a pinned commit cannot change under a live cli
 
 ## Brand assets
 
-`assets/brands/<brand>/` holds public logo files that brand tokens load through jsDelivr (pinned commit), because the engine needs CORS-enabled image URLs. Only logos the brand already publishes may go here.
+`assets/brands/<brand>/` holds public logo files that brand tokens load through jsDelivr (pinned commit), because the engine needs CORS-enabled image URLs. Only assets the brand owns and already publishes may go here (logos, own icons, own portraits). Never third-party licensed artwork such as stock illustration packs: those stay in the brand's private skill. Brand assets are not covered by the engine license; all rights stay with their owners.

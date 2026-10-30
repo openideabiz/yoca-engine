@@ -1,0 +1,38 @@
+/* yOCA badge states (APP §8.2). Inline the SVG in the DOM (not <img>, not <use>),
+   then set data-state="idle|listen|think|happy" on the <svg class="yoca-badge">. */
+.yoca-badge { display: block; overflow: visible; }
+.yoca-badge #y_eyeL, .yoca-badge #y_eyeR, .yoca-badge #y_pupL, .yoca-badge #y_pupR,
+.yoca-badge .ymouth, .yoca-badge #y_dot1, .yoca-badge #y_dot2, .yoca-badge #y_dot3 {
+  transform-box: fill-box; transform-origin: center;
+  transition: translate .3s ease, scale .3s ease, fill .2s ease;
+}
+@keyframes y-blink { 0%, 93%, 100% { scale: 1 1 } 96% { scale: 1 .08 } }
+@keyframes y-lit   { 0%, 100% { fill: #FF420E } 30%, 55% { fill: #FFE36B } }
+@keyframes y-rock  { 0%, 100% { rotate: -3deg } 50% { rotate: 3deg } }
+
+/* idle + listen: blink */
+.yoca-badge[data-state="idle"] :is(#y_eyeL, #y_eyeR, #y_pupL, #y_pupR),
+.yoca-badge[data-state="listen"] :is(#y_eyeL, #y_eyeR, #y_pupL, #y_pupR) { animation: y-blink 4.2s infinite; }
+
+/* listen: pupils down, lights in sequence */
+.yoca-badge[data-state="listen"] :is(#y_pupL, #y_pupR) { translate: 0 16px; }
+.yoca-badge[data-state="listen"] #y_dot1 { animation: y-lit 1.5s infinite; }
+.yoca-badge[data-state="listen"] #y_dot2 { animation: y-lit 1.5s .5s infinite; }
+.yoca-badge[data-state="listen"] #y_dot3 { animation: y-lit 1.5s 1s infinite; }
+
+/* think: eyes narrowed, pupils to the side, lights fast */
+.yoca-badge[data-state="think"] :is(#y_eyeL, #y_eyeR) { scale: 1 .55; }
+.yoca-badge[data-state="think"] :is(#y_pupL, #y_pupR) { scale: 1 .55; translate: 13px 0; }
+.yoca-badge[data-state="think"] #y_dot1 { animation: y-lit .6s infinite; }
+.yoca-badge[data-state="think"] #y_dot2 { animation: y-lit .6s .2s infinite; }
+.yoca-badge[data-state="think"] #y_dot3 { animation: y-lit .6s .4s infinite; }
+
+/* happy: pupils up, lights on, smile, slight rock */
+.yoca-badge[data-state="happy"] { animation: y-rock 1.4s ease-in-out infinite; transform-origin: 50% 90%; }
+.yoca-badge[data-state="happy"] :is(#y_pupL, #y_pupR) { translate: 0 -16px; }
+.yoca-badge[data-state="happy"] :is(#y_dot1, #y_dot2, #y_dot3) { fill: #FFE36B; }
+.yoca-badge[data-state="happy"] .ymouth { scale: 1.15 1.45; }
+
+@media (prefers-reduced-motion: reduce) {
+  .yoca-badge, .yoca-badge * { animation: none !important; transition: none !important; }
+}

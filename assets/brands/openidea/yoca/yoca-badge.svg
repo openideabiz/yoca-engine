@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="yoca-badge" data-state="idle" viewBox="0 0 1000 1000" role="img" aria-label="yOCA">
+  <image href="yoca-badge-base.png" xlink:href="yoca-badge-base.png" x="0" y="0" width="1000" height="1000"/>
+  <!-- covers: hide the original pupil holes and mouth in the raster -->
+  <rect x="355" y="237" width="57" height="113" rx="14" fill="#FC410D"/>
+  <rect x="583" y="237" width="57" height="113" rx="14" fill="#FC410D"/>
+  <rect x="450" y="383" width="94" height="24" fill="#FF420E"/>
+  <!-- animatable face: eyes and pupils are SIBLINGS (APP §8.2) -->
+  <rect id="y_eyeL" x="355" y="237" width="57" height="113" rx="14" fill="#0184A1"/>
+  <rect id="y_pupL" x="374" y="270" width="20" height="47" rx="5" fill="#010101"/>
+  <rect id="y_eyeR" x="583" y="237" width="57" height="113" rx="14" fill="#0184A1"/>
+  <rect id="y_pupR" x="601" y="270" width="20" height="47" rx="5" fill="#010101"/>
+  <circle id="y_dot1" cx="496.5" cy="233" r="10" fill="#FF420E"/>
+  <circle id="y_dot2" cx="496.5" cy="284" r="10" fill="#FF420E"/>
+  <circle id="y_dot3" cx="496.5" cy="335" r="10" fill="#FF420E"/>
+  <path class="ymouth" d="M454 386 L539 386 C537 398 525 403 497 403 C469 403 457 398 454 386 Z" fill="#010101"/>
+</svg>
