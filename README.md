@@ -10,6 +10,14 @@ Each version is pinned to its commit and served by jsDelivr. v1.0:
 
 Never point the skill at `@main`: a pinned commit cannot change under a live client.
 
+## Changes
+
+v2.3.0 (composition rules, backward compatible for carousels, posts and stories):
+- `brand.type_ratio` (optional, 1.15 to 1.8): role sizes follow one modular scale from the body size. `type_scale` still wins per role. Default 0 keeps the fixed sizes.
+- `page` layout: a `heading` section is bound to the section it introduces (Gestalt proximity), in every format.
+- Print formats (flyer, brochure pages): one steady rhythm from the top; a closing button, logo or note is anchored at the end of the reading path. `cta` pages keep the even layout.
+- New yellow QA lines: more than one isolated emphasis per view, more than one button, lists over 4 items (6 in print), flows over 4 steps, too many sections on one card or page.
+
 © OPENIDEA.biz
 
 ## Brand assets

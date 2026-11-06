@@ -1,4 +1,4 @@
-/*! yOCA+ Visual Engine v2.2.4 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
+/*! yOCA+ Visual Engine v2.3.0 | OPENIDEA.biz | generic, brand-driven, Canvas 2D native. Formats: carousel, post, post_square, story, flyer_a5, flyer_a4, brochure_a4, video_story, video_post.
  * Usage: YOCA.render({ brand: BRAND_TOKENS, slides: SLIDES, options: { format, lang, file, mount } })
  * The engine is identical for every client. Every visual decision comes from BRAND_TOKENS.
  * Never edit this code inside a chat. Fill BRAND_TOKENS and SLIDES only.
@@ -25,6 +25,7 @@
     layout: { margin: 96, content_top: 126, content_bottom: 1060, progress_y: 1150, min_gap: 44 },
     min_size: { body: 32, caption: 28, mono: 22, title: 48 },
     type_scale: {},
+    type_ratio: 0,                   // 0 = fixed role sizes; 1.15-1.8 = modular scale from the body size (type_scale still wins per role)
     rhythm: 'bookend_dark',          // bookend_dark | bookend_light | all_light | all_dark | alternate
     texture: { type: 'none', size: 60, alpha: 1, on: 'all' }, // grid | dots | lines | none ; on: all | bookends | internals
     shape: { radius: 0, pill_cta: true },
@@ -127,8 +128,18 @@
     return e;
   }
 
+  // modular type scale: size = body x ratio^step (one ratio for the whole hierarchy, never sizes picked one by one)
+  var RATIO_STEPS = { item_text: -1, node_text: -1, body: 0, cover_sub: 0, item_title: 0, node: 0, quote: 1, cover_setup: 1, heading: 1, statement: 2, title: 2, cta_title: 3, cover_title: 4 };
+  var RATIO_MAX = { cover_title: 150, cta_title: 120, title: 110, statement: 110 };
+  function ratioOver(brand, role) {
+    var r = +brand.type_ratio;
+    if (!r || r < 1.15 || r > 1.8 || RATIO_STEPS[role] == null) return {};
+    var base = ((brand.type_scale || {}).body || {}).size || ROLES.body.size;
+    var size = base * Math.pow(r, RATIO_STEPS[role]);
+    return { size: Math.round(Math.min(size, RATIO_MAX[role] || size)) };
+  }
   function fontOf(env, role, over) {
-    var R = merge(ROLES[role], (env.brand.type_scale || {})[role] || {});
+    var R = merge(merge(ROLES[role], ratioOver(env.brand, role)), (env.brand.type_scale || {})[role] || {});
     if (over) R = merge(R, over);
     var F = env.brand.fonts[R.f] || env.brand.fonts.body;
     if (R.f === 'mono' && !F.family) F = env.brand.fonts.body;
@@ -753,7 +764,7 @@
           case 'code': return codeBlock(env, x.lines);
           case 'stat': return group([bigNumberBlock(env, x.number || '0', x.label, 'stat'), x.body ? textBlock(env, x.body, 'body', { color: env.muted, em: bodyEm(env) }) : null], gap);
           case 'quote': return quoteBlock(env, x.quote || '', x.author);
-          case 'heading': return textBlock(env, x.title || '', 'title', { em: titleEm(env), font: { size: 54 } });
+          case 'heading': return textBlock(env, x.title || '', 'title', { em: titleEm(env), font: { size: ratioOver(env.brand, 'heading').size || 54 } });
           case 'text': return textBlock(env, x.body || '', 'body', { color: env.muted, em: bodyEm(env) });
           case 'button': return buttonBlock(env, x.button || '', x.url || env.brand.cta_url);
           case 'note': return note(env, x.note);
@@ -761,7 +772,15 @@
         }
         return null;
       });
-      return { head: header(env, sp), body: body.concat([note(env, sp.note)]) };
+      // proximity: a heading is bound to the section it introduces, closer to it than to the block above
+      var bound = [];
+      for (var j = 0; j < body.length; j++) {
+        var bj = body[j], nx = j + 1;
+        while (nx < body.length && !body[nx]) nx++;
+        if (bj && (sp.sections[j] || {}).type === 'heading' && nx < body.length) { bound.push(group([bj, body[nx]], gap)); j = nx; }
+        else bound.push(bj);
+      }
+      return { head: header(env, sp), body: bound.concat([note(env, sp.note)]) };
     },
     cta: function (env, sp, images) {
       return {
@@ -801,9 +820,25 @@
     }
     var env2 = chosen.env, L2 = chosen.L, m2 = chosen.m, headY = top, y = top + (L2.head ? L2.head.h : 0);
     var gap = Math.max(g.min_gap, (bottom - y - m2.sum) / (m2.body.length + 1)), pos = [];
-    y += gap;
-    m2.body.forEach(function (b) { pos.push(y); if (y + b.h > bottom + 1) qa.push({ level: 'error', msg: 'Block "' + b.kind + '" crosses the bottom safe line' }); y += b.h + gap; });
-    if (gap > 150 * H / 1350) qa.push({ level: 'warn', msg: 'Sparse card: gaps ' + Math.round(gap) + 'px. Add a visual block or more copy.' });
+    if (FMT.print && sp.layout !== 'cta') {
+      // print reads like a page: blocks keep one steady rhythm from the top (proximity), and the closing action
+      // (button, logo, closing note) is anchored at the end of the reading path (Z / Gutenberg terminal area)
+      var rg = Math.min(gap, g.min_gap * 1.8), nb = m2.body.length, a = nb, q;
+      while (a > 0 && /^(button|logo|label)$/.test(m2.body[a - 1].kind)) a--;
+      if (!m2.body.slice(a).some(function (b) { return b.kind === 'button' || b.kind === 'logo'; })) a = nb;
+      y += rg;
+      for (q = 0; q < a; q++) { pos.push(y); y += m2.body[q].h + rg; }
+      var tail = 0;
+      for (q = a; q < nb; q++) tail += m2.body[q].h + (q > a ? rg : 0);
+      var ty = Math.max(y, bottom - tail), freeSpace = a < nb ? ty - y : bottom - (y - rg);
+      for (q = a; q < nb; q++) { pos.push(ty); ty += m2.body[q].h + rg; }
+      pos.forEach(function (py, k) { if (py + m2.body[k].h > bottom + 1) qa.push({ level: 'error', msg: 'Block "' + m2.body[k].kind + '" crosses the bottom safe line' }); });
+      if (freeSpace > 0.42 * avail) qa.push({ level: 'warn', msg: 'Sparse page: ' + Math.round(freeSpace / avail * 100) + '% empty. Add a block or move content from the next page.' });
+    } else {
+      y += gap;
+      m2.body.forEach(function (b) { pos.push(y); if (y + b.h > bottom + 1) qa.push({ level: 'error', msg: 'Block "' + b.kind + '" crosses the bottom safe line' }); y += b.h + gap; });
+      if (gap > 150 * H / 1350) qa.push({ level: 'warn', msg: 'Sparse card: gaps ' + Math.round(gap) + 'px. Add a visual block or more copy.' });
+    }
     if (env2.s < 0.8) qa.push({ level: 'warn', msg: 'Copy shrunk to ' + Math.round(env2.s * 100) + '%: cut text' });
     return {
       qa: qa, scale: env2.s, blocks: (L2.head ? 1 : 0) + m2.body.length,
@@ -1081,6 +1116,24 @@
     slideTexts(sp).forEach(function (t) { lintText(t, list, qa); });
   }
 
+  /* ---------- composition QA: one isolated element, one primary action, one idea per unit ---------- */
+  function emSpans(t) { return Math.floor((String(t || '').match(/\*/g) || []).length / 2); }
+  function composeQA(sp, qa) {
+    var all = slideTexts(sp).reduce(function (a, t) { return a + emSpans(t); }, 0);
+    var inTitle = emSpans(sp.title);
+    if (inTitle > 1 || all > 2) qa.push({ level: 'warn', msg: all + ' emphasized spans: keep one isolated element per view (max 1 in the title)' });
+    var secs = sp.sections || [];
+    var buttons = (sp.button ? 1 : 0) + secs.filter(function (x) { return x && x.type === 'button'; }).length;
+    if (buttons > 1) qa.push({ level: 'warn', msg: buttons + ' buttons: keep one primary action, write the others as text' });
+    var maxItems = FMT.print ? 6 : 4;
+    [sp].concat(secs).forEach(function (x) {
+      if (x && x.items && x.items.length > maxItems) qa.push({ level: 'warn', msg: 'List of ' + x.items.length + ' items: over ' + maxItems + ', split it or group it under headings' });
+      if (x && x.nodes && x.nodes.length > 4) qa.push({ level: 'warn', msg: 'Flow of ' + x.nodes.length + ' steps: over 4, split it' });
+    });
+    var maxSecs = FMT.print ? 8 : 5;
+    if (secs.length > maxSecs) qa.push({ level: 'warn', msg: secs.length + ' sections on one ' + (FMT.print ? 'page' : 'card') + ': over ' + maxSecs + ', split it' });
+  }
+
   /* ---------- print export: PNG 300 dpi (pHYs) and a minimal PDF writer (JPEG pages) ---------- */
   var CRC = (function () { var t = [], c, n, k; for (n = 0; n < 256; n++) { c = n; for (k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
   function crc32(u8) { var c = 0xFFFFFFFF; for (var i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
@@ -1179,6 +1232,7 @@
         if (!LAYOUTS[type] && type !== 'cover') qa.push({ level: 'error', msg: 'Unknown layout "' + type + '": rendered as statement' });
         if (i > 0 && norm0[i - 1].sp.layout === sp.layout && type !== 'cover' && type !== 'cta' && type !== 'page') qa.push({ level: 'error', msg: 'Same layout as previous card: pick another layout' });
         lintSlide(sp, brand, lang, qa);
+        composeQA(sp, qa);
         if (type === 'cta' && sp.button && norm(sp.button).replace(/^https?:\/\//, '').replace(/^www\./, '') === norm(sp.url || brand.cta_url).replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')) qa.push({ level: 'error', msg: 'CTA button repeats the URL: write the action (e.g. "Fai il test")' });
         var words = wordCount([sp.title, sp.body, sp.statement, sp.quote, (sp.items || []).map(function (x) { return x.title + ' ' + (x.text || ''); }).join(' ')].join(' '));
         if (words > (FMT.max_words || 70)) qa.push({ level: 'warn', msg: words + ' words: over ' + (FMT.max_words || 70) + ' per card' });
@@ -1302,5 +1356,5 @@
     });
   }
 
-  G.YOCA = { version: '2.2.4', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
+  G.YOCA = { version: '2.3.0', formats: Object.keys(FORMATS), lint: lintText, render: render, contrast: contrast };
 })(typeof window !== 'undefined' ? window : this);
