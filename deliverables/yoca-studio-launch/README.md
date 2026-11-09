@@ -6,7 +6,7 @@ Carosello di 9 slide in formato verticale 1080 × 1350.
 Apri [index.html](./index.html) da GitHub Pages o scarica la cartella e aprilo nel browser.
 
 ## File
-- `slide-01.svg` … `slide-09.svg`: nove tavole SVG.
+- `slide-01.svg` … `slide-09.svg`: nove tavole SVG con gli asset ufficiali referenziati direttamente in ciascuna slide.
 - `index.html`: anteprima completa con gli asset ufficiali.
 - Gli asset ufficiali (logo OPENIDEA, figura yOCA, badge happy e icone delle quattro fasi) sono referenziati dalla repository `openideabiz/yoca-engine` al commit `3ff889964ae868e010399518560ae954c10ae33f`.
 
