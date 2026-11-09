@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1350" viewBox="0 0 1080 1350">
+<defs><pattern id="grid" width="54" height="54" patternUnits="userSpaceOnUse"><path d="M54 0H0V54" fill="none" stroke="#ECECEF" stroke-width="1"/></pattern></defs>
+<rect width="1080" height="1350" fill="#F6F6F7"/><rect width="1080" height="1350" fill="url(#grid)"/>
+<rect x="70" y="66" width="940" height="1218" rx="36" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="5"/>
+<path d="M108 174H972" stroke="#1A1A1A" stroke-width="3"/>
+<text x="108" y="132" class="kicker">IL PERCORSO · 01</text>
+<text x="970" y="132" text-anchor="end" class="number">04 / 09</text>
+<text x="104" y="430" class="title">Partiamo dal</text><text x="104" y="534" class="title">tuo Purpose.</text><text x="108" y="680" class="body">Importiamo il lavoro già svolto con</text><text x="108" y="728" class="body">Purpose eXplorer e prepariamo il percorso.</text>
+<rect x="108" y="1115" width="310" height="66" rx="33" fill="#F6F6F7" stroke="#1A1A1A" stroke-width="3"/>
+<text x="136" y="1157" class="tag">SETUP</text>
+<path d="M108 1216H972" stroke="#ECECEF" stroke-width="3"/>
+<text x="108" y="1250" class="footer">OPENIDEA.BIZ</text>
+<style>
+.kicker{font:700 23px 'JetBrains Mono',monospace;letter-spacing:2px;fill:#55555B}
+.number{font:500 20px 'JetBrains Mono',monospace;fill:#77777D}
+.title{font:700 76px Ubuntu,Arial,sans-serif;letter-spacing:-2px;fill:#1A1A1A}
+.body{font:400 30px Ubuntu,Arial,sans-serif;fill:#404047}
+.tag{font:700 19px 'JetBrains Mono',monospace;letter-spacing:.5px;fill:#1A1A1A}
+.footer{font:700 17px 'JetBrains Mono',monospace;letter-spacing:2px;fill:#77777D}
+</style></svg>
